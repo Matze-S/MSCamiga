@@ -1,0 +1,23 @@
+?u a
+a                  movea.l 4,a6
+a+4                move.l  a5,-(a7)
+a+6                subq.l  #4,a7
+a+8                movea.l a7,a0
+a+a                lea     a+1a,a5
+a+e                jsr     -1e(a6)
+a+12               move.l  (a7),d0
+a+14               addq.l  #4,a7
+a+16               movea.l (a7)+,a5
+a+18               rts
+?u
+a+1a               dc.w    f010
+a+1c               clr.b   d0
+a+1e               rte
+a+20               lea     4(a7),a0
+a+24               movea.l 4,a6
+a+28               move.l  a5,-(a7)
+a+2a               lea     a+36,a5
+a+2e               jsr     -1e(a6)
+a+32               movea.l (a7)+,a5
+a+34               rts
+?>

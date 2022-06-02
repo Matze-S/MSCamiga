@@ -1,0 +1,79 @@
+Copyright (C) 1990 by Matthias Schmidt
+
+
+Die Programme auf dieser Diskette:
+----------------------------------
+
+harddisk.device - OMTI HardDisk Treiber
+
+HDFormat  - Programm zum physikalischen formatieren einer Festplatte
+
+HDPark    - Dient zum parken einer oder mehrerer Festplatten
+
+HDProtect - Programm zum (ent)schützen einer Platte gegen schreib oder/und
+            Formatierzugriffe
+
+HDBase    - Wird benötigt, um die Basis-Adresse des OMTI Controllers im
+            Treiber einzustellen
+
+AddMem    - Residenter AddMem-Befehl
+Copyright (C) 1990 by Matthias Schmidt
+
+
+NewSysDirs - Dieses Programm assign't alle SYS:-Directories (FONTS:,C:,...)
+             neu in ein angegebenes Directory, lädt eine eventuell vor-
+             handende System-Configuration und führt eine angegebene Startup-
+             Datei aus (z.B. S:Startup-Sequence).
+
+FastBoot  - Dieses Programm installiert eine resetfeste Routine, die beim
+            Bootvorgang eine Diskette in DF0: ignoriert, und gleich auf
+            die HardDisk zugreift. Wenn während des Resetes die linke Maus-
+            Taste gedrückt wird, wird dennoch von DF0: gebooted.
+
+Seek0Reset - Dieses Programm fährt die Köpfe von Unit 0 auf Spur 0 und lößt
+             einen Reset aus.
+
+TotalReset - Dieses Programm entfernt sämtliche resetfesten Programme,
+             Viren,... und lößt einen Reset aus.
+Copyright (C) 1990 by Matthias Schmidt
+
+
+Beispiel einer Bootdiskette:
+-----------------------------------------
+     S (dir)
+        Startup-Sequence
+  harddisk.device        Mount
+  MountList              FastBoot
+  Seek0Reset             FastFileSystem
+  System-Configuration	 Disk.info
+-----------------------------------------
+
+Startup-Sequence:
+-----------------------------------------
+mount DH0:
+fastboot
+seek0reset
+-----------------------------------------
+Copyright (C) 1990 by Matthias Schmidt
+
+
+So könnte zum Beispiel die Harddisk eingerichtet sein:
+----------------------------------------------------------
+     S (dir)
+       Startup-Sequence
+     Workbench (dir)
+       ...
+  NewSysDirs				 System-Configuration
+  Workbench.info			 Disk.info
+----------------------------------------------------------
+
+Startup-Sequence
+----------------------------------------------------------
+NewSysDirs DH0:Workbench S:Startup-Sequence
+----------------------------------------------------------
+Copyright (C) 1990 by Matthias Schmidt
+
+
+... und tschüss ... !
+
+

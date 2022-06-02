@@ -1,0 +1,1289 @@
+Aztec 68000 Assembler 5.0d  Sep 12 1990
+     1 0000:                    ;#INIT=ma
+     2 0000:                    
+     3 0000:                    ;
+     4 0000:                    ; kick.asm
+     5 0000:                    ;
+     6 0000:                    
+     7 0000:                    	machine mc68020
+     8 0000:                    	mc68851
+     9 0000:                    	far	data
+    10 0000:                    	cseg
+    11 0000:                    
+    12 0000:  0000 0004         _AbsExecBase	equ	4
+    13 0000:  ffff ffe2         _LVOSupervisor	equ	-$1e
+    14 0000:  ffff ff88         _LVODisable	equ	-$78
+    15 0000:  ffff ff82         _LVOEnable	equ	-$7e
+    16 0000:  ffff ff3a         _LVOAllocMem	equ	-$c6
+    17 0000:  ffff ff2e         _LVOFreeMem	equ	-$d2
+    18 0000:  ffff fe62         _LVOCloseLibrary equ	-$19e
+    19 0000:  ffff fdd8         _LVOOpenLibrary equ	-$228
+    20 0000:  ffff ffe2         _LVOOpen	equ	-$1e
+    21 0000:  ffff ffdc         _LVOClose	equ	-$24
+    22 0000:  ffff ffd6         _LVORead	equ	-$2a
+    23 0000:                    
+exec/types.i:      0 0000:                    	include "exec/types.i"
+exec/types.i:      1 0000:                    	IFND	EXEC_TYPES_I
+exec/types.i:      2 0000:  0000 0001         EXEC_TYPES_I	SET	1
+exec/types.i:      3 0000:                    **
+exec/types.i:      4 0000:                    **	$Filename: exec/types.i $
+exec/types.i:      5 0000:                    **	$Release: 2.0 revision 2$
+exec/types.i:      6 0000:                    **	$Revision: 36.9 $
+exec/types.i:      7 0000:                    **	$Date: 90/05/10 $
+exec/types.i:      8 0000:                    **
+exec/types.i:      9 0000:                    **	Data storage macros.  Must be included before any other Amiga include.
+exec/types.i:     10 0000:                    **
+exec/types.i:     11 0000:                    **	(C) Copyright 1985,1986,1987,1988,1989 Commodore-Amiga, Inc.
+exec/types.i:     12 0000:                    **	    All Rights Reserved
+exec/types.i:     13 0000:                    **
+exec/types.i:     14 0000:                    
+exec/types.i:     15 0000:                    
+exec/types.i:     16 0000:  0000 0024         INCLUDE_VERSION	EQU 36	;Version of the include files in use. (Do not
+exec/types.i:     17 0000:                    			;use this label for OpenLibrary() calls!)
+exec/types.i:     18 0000:                    
+exec/types.i:     19 0000:                    
+exec/types.i:     20 0000:                    EXTERN_LIB  MACRO
+exec/types.i:     21 0000:                                XREF    _LVO\1
+exec/types.i:     22 0000:                                ENDM
+exec/types.i:     23 0000:                    
+exec/types.i:     24 0000:                    **
+exec/types.i:     25 0000:                    ** Structure Building Macros
+exec/types.i:     26 0000:                    **
+exec/types.i:     27 0000:                    STRUCTURE   MACRO		; structure name, initial offset
+exec/types.i:     28 0000:                    \1          EQU     0
+exec/types.i:     29 0000:                    SOFFSET     SET     \2
+exec/types.i:     30 0000:                                ENDM
+exec/types.i:     31 0000:                    
+exec/types.i:     32 0000:                    FPTR        MACRO		; function pointer (32 bits - all bits valid)
+exec/types.i:     33 0000:                    \1          EQU     SOFFSET
+exec/types.i:     34 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:     35 0000:                    	    ENDM
+exec/types.i:     36 0000:                    
+exec/types.i:     37 0000:                    BOOL        MACRO		; boolean (16 bits)
+exec/types.i:     38 0000:                    \1          EQU     SOFFSET
+exec/types.i:     39 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:     40 0000:                                ENDM
+exec/types.i:     41 0000:                    
+exec/types.i:     42 0000:                    BYTE        MACRO		; byte (8 bits)
+exec/types.i:     43 0000:                    \1          EQU     SOFFSET
+exec/types.i:     44 0000:                    SOFFSET     SET     SOFFSET+1
+exec/types.i:     45 0000:                                ENDM
+exec/types.i:     46 0000:                    
+exec/types.i:     47 0000:                    UBYTE       MACRO		; unsigned byte (8 bits)
+exec/types.i:     48 0000:                    \1          EQU     SOFFSET
+exec/types.i:     49 0000:                    SOFFSET     SET     SOFFSET+1
+exec/types.i:     50 0000:                                ENDM
+exec/types.i:     51 0000:                    
+exec/types.i:     52 0000:                    WORD        MACRO		; word (16 bits)
+exec/types.i:     53 0000:                    \1          EQU     SOFFSET
+exec/types.i:     54 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:     55 0000:                                ENDM
+exec/types.i:     56 0000:                    
+exec/types.i:     57 0000:                    UWORD       MACRO		; unsigned word (16 bits)
+exec/types.i:     58 0000:                    \1          EQU     SOFFSET
+exec/types.i:     59 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:     60 0000:                                ENDM
+exec/types.i:     61 0000:                    
+exec/types.i:     62 0000:                    SHORT       MACRO		; obsolete - use WORD
+exec/types.i:     63 0000:                    \1          EQU     SOFFSET
+exec/types.i:     64 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:     65 0000:                                ENDM
+exec/types.i:     66 0000:                    
+exec/types.i:     67 0000:                    USHORT      MACRO		; obsolete - use UWORD
+exec/types.i:     68 0000:                    \1          EQU     SOFFSET
+exec/types.i:     69 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:     70 0000:                                ENDM
+exec/types.i:     71 0000:                    
+exec/types.i:     72 0000:                    LONG        MACRO		; long (32 bits)
+exec/types.i:     73 0000:                    \1          EQU     SOFFSET
+exec/types.i:     74 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:     75 0000:                                ENDM
+exec/types.i:     76 0000:                    
+exec/types.i:     77 0000:                    ULONG       MACRO		; unsigned long (32 bits)
+exec/types.i:     78 0000:                    \1          EQU     SOFFSET
+exec/types.i:     79 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:     80 0000:                                ENDM
+exec/types.i:     81 0000:                    
+exec/types.i:     82 0000:                    FLOAT       MACRO		; C float (32 bits)
+exec/types.i:     83 0000:                    \1          EQU     SOFFSET
+exec/types.i:     84 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:     85 0000:                                ENDM
+exec/types.i:     86 0000:                    
+exec/types.i:     87 0000:                    DOUBLE	    MACRO		; C double (64 bits)
+exec/types.i:     88 0000:                    \1	    EQU	    SOFFSET
+exec/types.i:     89 0000:                    SOFFSET	    SET	    SOFFSET+8
+exec/types.i:     90 0000:                    	    ENDM
+exec/types.i:     91 0000:                    
+exec/types.i:     92 0000:                    APTR        MACRO		; untyped pointer (32 bits - all bits valid)
+exec/types.i:     93 0000:                    \1          EQU     SOFFSET
+exec/types.i:     94 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:     95 0000:                                ENDM
+exec/types.i:     96 0000:                    
+exec/types.i:     97 0000:                    CPTR        MACRO		; obsolete
+exec/types.i:     98 0000:                    \1          EQU     SOFFSET
+exec/types.i:     99 0000:                    SOFFSET     SET     SOFFSET+4
+exec/types.i:    100 0000:                    	    ENDM
+exec/types.i:    101 0000:                    
+exec/types.i:    102 0000:                    RPTR        MACRO		; signed relative pointer (16 bits)
+exec/types.i:    103 0000:                    \1          EQU     SOFFSET
+exec/types.i:    104 0000:                    SOFFSET     SET     SOFFSET+2
+exec/types.i:    105 0000:                                ENDM
+exec/types.i:    106 0000:                    
+exec/types.i:    107 0000:                    LABEL       MACRO		; Define a label without bumping the offset
+exec/types.i:    108 0000:                    \1          EQU     SOFFSET
+exec/types.i:    109 0000:                                ENDM
+exec/types.i:    110 0000:                    
+exec/types.i:    111 0000:                    STRUCT      MACRO		; Define a sub-structure
+exec/types.i:    112 0000:                    \1          EQU     SOFFSET
+exec/types.i:    113 0000:                    SOFFSET     SET     SOFFSET+\2
+exec/types.i:    114 0000:                                ENDM
+exec/types.i:    115 0000:                    
+exec/types.i:    116 0000:                    ALIGNWORD   MACRO		; Align structure offset to nearest word
+exec/types.i:    117 0000:                    SOFFSET     SET     (SOFFSET+1)&$fffffffe
+exec/types.i:    118 0000:                    	    ENDM
+exec/types.i:    119 0000:                    
+exec/types.i:    120 0000:                    ALIGNLONG   MACRO		; Align structure offset to nearest longword
+exec/types.i:    121 0000:                    SOFFSET     SET     (SOFFSET+3)&$fffffffc
+exec/types.i:    122 0000:                    	    ENDM
+exec/types.i:    123 0000:                    
+exec/types.i:    124 0000:                    **
+exec/types.i:    125 0000:                    ** Enumerated variables.  Use ENUM to set a base number, and EITEM to assign
+exec/types.i:    126 0000:                    ** incrementing values.  ENUM can be used to set a new base at any time.
+exec/types.i:    127 0000:                    **
+exec/types.i:    128 0000:                    ENUM	    MACRO   ;[new base]
+exec/types.i:    129 0000:                    	    IFC     '\1',''
+exec/types.i:    130 0000:                    EOFFSET	    SET	    0		; Default to zero
+exec/types.i:    131 0000:                    	    ENDC
+exec/types.i:    132 0000:                    	    IFNC    '\1',''
+exec/types.i:    133 0000:                    EOFFSET	    SET     \1
+exec/types.i:    134 0000:                    	    ENDC
+exec/types.i:    135 0000:                    	    ENDM
+exec/types.i:    136 0000:                    
+exec/types.i:    137 0000:                    EITEM	    MACRO   ;label
+exec/types.i:    138 0000:                    \1          EQU     EOFFSET
+exec/types.i:    139 0000:                    EOFFSET     SET     EOFFSET+1
+exec/types.i:    140 0000:                    	    ENDM
+exec/types.i:    141 0000:                    
+exec/types.i:    142 0000:                    **
+exec/types.i:    143 0000:                    **  Bit Definition Macro
+exec/types.i:    144 0000:                    **
+exec/types.i:    145 0000:                    **  Given:
+exec/types.i:    146 0000:                    **	BITDEF  MEM,CLEAR,16
+exec/types.i:    147 0000:                    **
+exec/types.i:    148 0000:                    **  Yields:
+exec/types.i:    149 0000:                    **	MEMB_CLEAR  EQU 16			; Bit number
+exec/types.i:    150 0000:                    **	MEMF_CLEAR  EQU 1<<16			; Bit mask
+exec/types.i:    151 0000:                    **
+exec/types.i:    152 0000:                    
+exec/types.i:    153 0000:                    BITDEF      MACRO   ; prefix,&name,&bitnum
+exec/types.i:    154 0000:                                BITDEF0 \1,\2,B_,\3
+exec/types.i:    155 0000:                    \@BITDEF    SET     1<<\3
+exec/types.i:    156 0000:                                BITDEF0 \1,\2,F_,\@BITDEF
+exec/types.i:    157 0000:                                ENDM
+exec/types.i:    158 0000:                    
+exec/types.i:    159 0000:                    BITDEF0     MACRO   ; prefix,&name,&type,&value
+exec/types.i:    160 0000:                    \1\3\2      EQU     \4
+exec/types.i:    161 0000:                                ENDM
+exec/types.i:    162 0000:                    
+exec/types.i:    163 0000:                    **
+exec/types.i:    164 0000:                    ** LIBRARY_VERSION is now obsolete.  Please use LIBRARY_MINIMUM or code
+exec/types.i:    165 0000:                    ** the specific minimum library version you require.
+exec/types.i:    166 0000:                    **		LIBRARY_VERSION EQU     36
+exec/types.i:    167 0000:                    **
+exec/types.i:    168 0000:  0000 0021         LIBRARY_MINIMUM	EQU 33	;Lowest version supported by Commodore-Amiga
+exec/types.i:    169 0000:                    
+exec/types.i:    170 0000:                    	ENDC	; EXEC_TYPES_I
+exec/memory.i:      0 0000:                    	include "exec/memory.i"
+exec/memory.i:      1 0000:                    	IFND	EXEC_MEMORY_I
+exec/memory.i:      2 0000:  0000 0001         EXEC_MEMORY_I	SET	1
+exec/memory.i:      3 0000:                    **
+exec/memory.i:      4 0000:                    **	$Filename: exec/memory.i $
+exec/memory.i:      5 0000:                    **	$Release: 2.0 revision 2$
+exec/memory.i:      6 0000:                    **	$Revision: 36.10 $
+exec/memory.i:      7 0000:                    **	$Date: 90/06/11 $
+exec/memory.i:      8 0000:                    **
+exec/memory.i:      9 0000:                    **	Definitions and structures used by the memory allocation system
+exec/memory.i:     10 0000:                    **
+exec/memory.i:     11 0000:                    **	(C) Copyright 1985,1986,1987,1988,1989,1990 Commodore-Amiga, Inc.
+exec/memory.i:     12 0000:                    **	    All Rights Reserved
+exec/memory.i:     13 0000:                    **
+exec/memory.i:     14 0000:                    
+exec/memory.i:     15 0000:                        IFND EXEC_NODES_I
+exec/nodes.i:      0 0000:                        INCLUDE "exec/nodes.i"
+exec/nodes.i:      1 0000:                    	IFND EXEC_NODES_I
+exec/nodes.i:      2 0000:  0000 0001         EXEC_NODES_I	SET 1
+exec/nodes.i:      3 0000:                    **
+exec/nodes.i:      4 0000:                    **	$Filename: exec/nodes.i $
+exec/nodes.i:      5 0000:                    **	$Release: 2.0 revision 2$
+exec/nodes.i:      6 0000:                    **	$Revision: 36.8 $
+exec/nodes.i:      7 0000:                    **	$Date: 90/06/11 $
+exec/nodes.i:      8 0000:                    **
+exec/nodes.i:      9 0000:                    **	Nodes & Node type identifiers.
+exec/nodes.i:     10 0000:                    **
+exec/nodes.i:     11 0000:                    **	(C) Copyright 1985,1986,1987,1988,1989 Commodore-Amiga, Inc.
+exec/nodes.i:     12 0000:                    **	    All Rights Reserved
+exec/nodes.i:     13 0000:                    **
+exec/nodes.i:     14 0000:                    
+exec/nodes.i:     15 0000:                    
+exec/nodes.i:     16 0000:                    *
+exec/nodes.i:     17 0000:                    *   List Node Structure.  Each member in a list starts with a Node
+exec/nodes.i:     18 0000:                    *
+exec/nodes.i:     19 0000:                       STRUCTURE	LN,0	; List Node
+exec/nodes.i: +   19 0000:  0000 0000         LN          EQU     0
+exec/nodes.i: +   19 0000:  0000 0000         SOFFSET     SET     0
+exec/nodes.i:     20 0000:                    	APTR    LN_SUCC	; Pointer to next (successor)
+exec/nodes.i: +   20 0000:  0000 0000         LN_SUCC          EQU     SOFFSET
+exec/nodes.i: +   20 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+exec/nodes.i:     21 0000:                    	APTR    LN_PRED	; Pointer to previous (predecessor)
+exec/nodes.i: +   21 0000:  0000 0004         LN_PRED          EQU     SOFFSET
+exec/nodes.i: +   21 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+exec/nodes.i:     22 0000:                    	UBYTE   LN_TYPE
+exec/nodes.i: +   22 0000:  0000 0008         LN_TYPE          EQU     SOFFSET
+exec/nodes.i: +   22 0000:  0000 0009         SOFFSET     SET     SOFFSET+1
+exec/nodes.i:     23 0000:                    	BYTE    LN_PRI	; Priority, for sorting
+exec/nodes.i: +   23 0000:  0000 0009         LN_PRI          EQU     SOFFSET
+exec/nodes.i: +   23 0000:  0000 000a         SOFFSET     SET     SOFFSET+1
+exec/nodes.i:     24 0000:                    	APTR    LN_NAME	; ID string, null terminated
+exec/nodes.i: +   24 0000:  0000 000a         LN_NAME          EQU     SOFFSET
+exec/nodes.i: +   24 0000:  0000 000e         SOFFSET     SET     SOFFSET+4
+exec/nodes.i:     25 0000:                    	LABEL   LN_SIZE	; Note: word alligned
+exec/nodes.i: +   25 0000:  0000 000e         LN_SIZE          EQU     SOFFSET
+exec/nodes.i:     26 0000:                    
+exec/nodes.i:     27 0000:                    ; minimal node -- no type checking possible
+exec/nodes.i:     28 0000:                       STRUCTURE	MLN,0	; Minimal List Node
+exec/nodes.i: +   28 0000:  0000 0000         MLN          EQU     0
+exec/nodes.i: +   28 0000:  0000 0000         SOFFSET     SET     0
+exec/nodes.i:     29 0000:                    	APTR    MLN_SUCC
+exec/nodes.i: +   29 0000:  0000 0000         MLN_SUCC          EQU     SOFFSET
+exec/nodes.i: +   29 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+exec/nodes.i:     30 0000:                    	APTR    MLN_PRED
+exec/nodes.i: +   30 0000:  0000 0004         MLN_PRED          EQU     SOFFSET
+exec/nodes.i: +   30 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+exec/nodes.i:     31 0000:                    	LABEL   MLN_SIZE
+exec/nodes.i: +   31 0000:  0000 0008         MLN_SIZE          EQU     SOFFSET
+exec/nodes.i:     32 0000:                    
+exec/nodes.i:     33 0000:                    
+exec/nodes.i:     34 0000:                    **
+exec/nodes.i:     35 0000:                    ** Note: Newly initialized IORequests, and software interrupt structures
+exec/nodes.i:     36 0000:                    ** used with Cause(), should have type NT_UNKNOWN.  The OS will assign a type
+exec/nodes.i:     37 0000:                    ** when they are first used.
+exec/nodes.i:     38 0000:                    **
+exec/nodes.i:     39 0000:                    ;------ Node Types for LN_TYPE
+exec/nodes.i:     40 0000:                    
+exec/nodes.i:     41 0000:  0000 0000         NT_UNKNOWN      EQU 0
+exec/nodes.i:     42 0000:  0000 0001         NT_TASK         EQU 1	; Exec task
+exec/nodes.i:     43 0000:  0000 0002         NT_INTERRUPT    EQU 2
+exec/nodes.i:     44 0000:  0000 0003         NT_DEVICE       EQU 3
+exec/nodes.i:     45 0000:  0000 0004         NT_MSGPORT      EQU 4
+exec/nodes.i:     46 0000:  0000 0005         NT_MESSAGE      EQU 5   ; Indicates message currently pending
+exec/nodes.i:     47 0000:  0000 0006         NT_FREEMSG      EQU 6
+exec/nodes.i:     48 0000:  0000 0007         NT_REPLYMSG     EQU 7   ; Message has been replied
+exec/nodes.i:     49 0000:  0000 0008         NT_RESOURCE     EQU 8
+exec/nodes.i:     50 0000:  0000 0009         NT_LIBRARY      EQU 9
+exec/nodes.i:     51 0000:  0000 000a         NT_MEMORY       EQU 10
+exec/nodes.i:     52 0000:  0000 000b         NT_SOFTINT	EQU 11	; Internal flag used by SoftInts
+exec/nodes.i:     53 0000:  0000 000c         NT_FONT 	EQU 12
+exec/nodes.i:     54 0000:  0000 000d         NT_PROCESS	EQU 13	; AmigaDOS Process
+exec/nodes.i:     55 0000:  0000 000e         NT_SEMAPHORE	EQU 14
+exec/nodes.i:     56 0000:  0000 000f         NT_SIGNALSEM	EQU 15	; signal semaphores
+exec/nodes.i:     57 0000:  0000 0010         NT_BOOTNODE 	EQU 16
+exec/nodes.i:     58 0000:  0000 0011         NT_KICKMEM 	EQU 17
+exec/nodes.i:     59 0000:  0000 0012         NT_GRAPHICS	EQU 18
+exec/nodes.i:     60 0000:  0000 0013         NT_DEATHMESSAGE	EQU 19
+exec/nodes.i:     61 0000:                    
+exec/nodes.i:     62 0000:  0000 00fe         NT_USER		EQU 254	; User node types work down from here
+exec/nodes.i:     63 0000:  0000 00ff         NT_EXTENDED	EQU 255
+exec/nodes.i:     64 0000:                    
+exec/nodes.i:     65 0000:                    	ENDC	;EXEC_NODES_I
+exec/memory.i:     17 0000:                        ENDC	; EXEC_NODES_I
+exec/memory.i:     18 0000:                    
+exec/memory.i:     19 0000:                    
+exec/memory.i:     20 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     21 0000:                    *
+exec/memory.i:     22 0000:                    *   Memory List Structures
+exec/memory.i:     23 0000:                    *
+exec/memory.i:     24 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     25 0000:                    *
+exec/memory.i:     26 0000:                    *   A memory list appears in two forms:  One is a requirements list
+exec/memory.i:     27 0000:                    *   the other is a list of already allocated memory.  The format is
+exec/memory.i:     28 0000:                    *   the same, with the reqirements/address field occupying the same
+exec/memory.i:     29 0000:                    *   position.
+exec/memory.i:     30 0000:                    *
+exec/memory.i:     31 0000:                    *   The format is a linked list of ML structures each of which has
+exec/memory.i:     32 0000:                    *   an array of ME entries.
+exec/memory.i:     33 0000:                    *
+exec/memory.i:     34 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     35 0000:                    
+exec/memory.i:     36 0000:                     STRUCTURE ML,LN_SIZE
+exec/memory.i: +   36 0000:  0000 0000         ML          EQU     0
+exec/memory.i: +   36 0000:  0000 000e         SOFFSET     SET     LN_SIZE
+exec/memory.i:     37 0000:                        UWORD   ML_NUMENTRIES	    ; The number of ME structures that follow
+exec/memory.i: +   37 0000:  0000 000e         ML_NUMENTRIES          EQU     SOFFSET
+exec/memory.i: +   37 0000:  0000 0010         SOFFSET     SET     SOFFSET+2
+exec/memory.i:     38 0000:                        LABEL   ML_ME		    ; where the ME structures begin
+exec/memory.i: +   38 0000:  0000 0010         ML_ME          EQU     SOFFSET
+exec/memory.i:     39 0000:                        LABEL   ML_SIZE	;Note: does NOT include any "ME" structures.
+exec/memory.i: +   39 0000:  0000 0010         ML_SIZE          EQU     SOFFSET
+exec/memory.i:     40 0000:                    
+exec/memory.i:     41 0000:                    
+exec/memory.i:     42 0000:                     STRUCTURE ME,0
+exec/memory.i: +   42 0000:  0000 0000         ME          EQU     0
+exec/memory.i: +   42 0000:  0000 0000         SOFFSET     SET     0
+exec/memory.i:     43 0000:                        LABEL   ME_REQS		    ; the AllocMem requirements
+exec/memory.i: +   43 0000:  0000 0000         ME_REQS          EQU     SOFFSET
+exec/memory.i:     44 0000:                        APTR    ME_ADDR		    ; the address of this block (an alias
+exec/memory.i: +   44 0000:  0000 0000         ME_ADDR          EQU     SOFFSET
+exec/memory.i: +   44 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     45 0000:                    				    ;	for the same location as ME_REQS)
+exec/memory.i:     46 0000:                        ULONG   ME_LENGTH		    ; the length of this region
+exec/memory.i: +   46 0000:  0000 0004         ME_LENGTH          EQU     SOFFSET
+exec/memory.i: +   46 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     47 0000:                        LABEL   ME_SIZE
+exec/memory.i: +   47 0000:  0000 0008         ME_SIZE          EQU     SOFFSET
+exec/memory.i:     48 0000:                    
+exec/memory.i:     49 0000:                    
+exec/memory.i:     50 0000:                    *------ memory options:
+exec/memory.i:     51 0000:                    *------ see the AllocMem() documentation for details------*
+exec/memory.i:     52 0000:                    
+exec/memory.i:     53 0000:  0000 0000         MEMF_ANY	EQU 0		;Any type of memory will do
+exec/memory.i:     54 0000:                        BITDEF  MEM,PUBLIC,0
+exec/memory.i: +   54 0000:                                BITDEF0 MEM,PUBLIC,B_,0
+exec/memory.i: +   54 0000:  0000 0000         MEMB_PUBLIC      EQU     0
+exec/memory.i: +   54 0000:  0000 0001         .001BITDEF    SET     1<<0
+exec/memory.i: +   54 0000:                                BITDEF0 MEM,PUBLIC,F_,.001BITDEF
+exec/memory.i: +   54 0000:  0000 0001         MEMF_PUBLIC      EQU     .001BITDEF
+exec/memory.i:     55 0000:                        BITDEF  MEM,CHIP,1
+exec/memory.i: +   55 0000:                                BITDEF0 MEM,CHIP,B_,1
+exec/memory.i: +   55 0000:  0000 0001         MEMB_CHIP      EQU     1
+exec/memory.i: +   55 0000:  0000 0002         .002BITDEF    SET     1<<1
+exec/memory.i: +   55 0000:                                BITDEF0 MEM,CHIP,F_,.002BITDEF
+exec/memory.i: +   55 0000:  0000 0002         MEMF_CHIP      EQU     .002BITDEF
+exec/memory.i:     56 0000:                        BITDEF  MEM,FAST,2
+exec/memory.i: +   56 0000:                                BITDEF0 MEM,FAST,B_,2
+exec/memory.i: +   56 0000:  0000 0002         MEMB_FAST      EQU     2
+exec/memory.i: +   56 0000:  0000 0004         .003BITDEF    SET     1<<2
+exec/memory.i: +   56 0000:                                BITDEF0 MEM,FAST,F_,.003BITDEF
+exec/memory.i: +   56 0000:  0000 0004         MEMF_FAST      EQU     .003BITDEF
+exec/memory.i:     57 0000:                        BITDEF  MEM,LOCAL,8
+exec/memory.i: +   57 0000:                                BITDEF0 MEM,LOCAL,B_,8
+exec/memory.i: +   57 0000:  0000 0008         MEMB_LOCAL      EQU     8
+exec/memory.i: +   57 0000:  0000 0100         .004BITDEF    SET     1<<8
+exec/memory.i: +   57 0000:                                BITDEF0 MEM,LOCAL,F_,.004BITDEF
+exec/memory.i: +   57 0000:  0000 0100         MEMF_LOCAL      EQU     .004BITDEF
+exec/memory.i:     58 0000:                        BITDEF  MEM,24BITDMA,9	;DMAable memory within 24 bits of address
+exec/memory.i: +   58 0000:                                BITDEF0 MEM,24BITDMA,B_,9
+exec/memory.i: +   58 0000:  0000 0009         MEMB_24BITDMA      EQU     9
+exec/memory.i: +   58 0000:  0000 0200         .005BITDEF    SET     1<<9
+exec/memory.i: +   58 0000:                                BITDEF0 MEM,24BITDMA,F_,.005BITDEF
+exec/memory.i: +   58 0000:  0000 0200         MEMF_24BITDMA      EQU     .005BITDEF
+exec/memory.i:     59 0000:                    
+exec/memory.i:     60 0000:                        BITDEF  MEM,CLEAR,16
+exec/memory.i: +   60 0000:                                BITDEF0 MEM,CLEAR,B_,16
+exec/memory.i: +   60 0000:  0000 0010         MEMB_CLEAR      EQU     16
+exec/memory.i: +   60 0000:  0001 0000         .006BITDEF    SET     1<<16
+exec/memory.i: +   60 0000:                                BITDEF0 MEM,CLEAR,F_,.006BITDEF
+exec/memory.i: +   60 0000:  0001 0000         MEMF_CLEAR      EQU     .006BITDEF
+exec/memory.i:     61 0000:                        BITDEF  MEM,LARGEST,17
+exec/memory.i: +   61 0000:                                BITDEF0 MEM,LARGEST,B_,17
+exec/memory.i: +   61 0000:  0000 0011         MEMB_LARGEST      EQU     17
+exec/memory.i: +   61 0000:  0002 0000         .007BITDEF    SET     1<<17
+exec/memory.i: +   61 0000:                                BITDEF0 MEM,LARGEST,F_,.007BITDEF
+exec/memory.i: +   61 0000:  0002 0000         MEMF_LARGEST      EQU     .007BITDEF
+exec/memory.i:     62 0000:                        BITDEF  MEM,REVERSE,18
+exec/memory.i: +   62 0000:                                BITDEF0 MEM,REVERSE,B_,18
+exec/memory.i: +   62 0000:  0000 0012         MEMB_REVERSE      EQU     18
+exec/memory.i: +   62 0000:  0004 0000         .008BITDEF    SET     1<<18
+exec/memory.i: +   62 0000:                                BITDEF0 MEM,REVERSE,F_,.008BITDEF
+exec/memory.i: +   62 0000:  0004 0000         MEMF_REVERSE      EQU     .008BITDEF
+exec/memory.i:     63 0000:                        BITDEF  MEM,TOTAL,19	;AvailMem: return total size of memory
+exec/memory.i: +   63 0000:                                BITDEF0 MEM,TOTAL,B_,19
+exec/memory.i: +   63 0000:  0000 0013         MEMB_TOTAL      EQU     19
+exec/memory.i: +   63 0000:  0008 0000         .009BITDEF    SET     1<<19
+exec/memory.i: +   63 0000:                                BITDEF0 MEM,TOTAL,F_,.009BITDEF
+exec/memory.i: +   63 0000:  0008 0000         MEMF_TOTAL      EQU     .009BITDEF
+exec/memory.i:     64 0000:                    
+exec/memory.i:     65 0000:                    
+exec/memory.i:     66 0000:                    *------ alignment rules for a memory block:
+exec/memory.i:     67 0000:                    
+exec/memory.i:     68 0000:  0000 0008         MEM_BLOCKSIZE	EQU 8
+exec/memory.i:     69 0000:  0000 0007         MEM_BLOCKMASK	EQU (MEM_BLOCKSIZE-1)
+exec/memory.i:     70 0000:                    
+exec/memory.i:     71 0000:                    
+exec/memory.i:     72 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     73 0000:                    *
+exec/memory.i:     74 0000:                    *   Memory Region Header
+exec/memory.i:     75 0000:                    *
+exec/memory.i:     76 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     77 0000:                    
+exec/memory.i:     78 0000:                     STRUCTURE  MH,LN_SIZE		    ; (LN_TYPE will be set to NT_MEMORY)
+exec/memory.i: +   78 0000:  0000 0000         MH          EQU     0
+exec/memory.i: +   78 0000:  0000 000e         SOFFSET     SET     LN_SIZE
+exec/memory.i:     79 0000:                        UWORD   MH_ATTRIBUTES	    ; characteristics of this region
+exec/memory.i: +   79 0000:  0000 000e         MH_ATTRIBUTES          EQU     SOFFSET
+exec/memory.i: +   79 0000:  0000 0010         SOFFSET     SET     SOFFSET+2
+exec/memory.i:     80 0000:                        APTR    MH_FIRST		    ; first free region
+exec/memory.i: +   80 0000:  0000 0010         MH_FIRST          EQU     SOFFSET
+exec/memory.i: +   80 0000:  0000 0014         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     81 0000:                        APTR    MH_LOWER		    ; lower memory bound
+exec/memory.i: +   81 0000:  0000 0014         MH_LOWER          EQU     SOFFSET
+exec/memory.i: +   81 0000:  0000 0018         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     82 0000:                        APTR    MH_UPPER		    ; upper memory bound+1
+exec/memory.i: +   82 0000:  0000 0018         MH_UPPER          EQU     SOFFSET
+exec/memory.i: +   82 0000:  0000 001c         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     83 0000:                        ULONG   MH_FREE		    ; number of free bytes
+exec/memory.i: +   83 0000:  0000 001c         MH_FREE          EQU     SOFFSET
+exec/memory.i: +   83 0000:  0000 0020         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     84 0000:                        LABEL   MH_SIZE
+exec/memory.i: +   84 0000:  0000 0020         MH_SIZE          EQU     SOFFSET
+exec/memory.i:     85 0000:                    
+exec/memory.i:     86 0000:                    
+exec/memory.i:     87 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     88 0000:                    *
+exec/memory.i:     89 0000:                    *   Memory Chunk
+exec/memory.i:     90 0000:                    *
+exec/memory.i:     91 0000:                    *---------------------------------------------------------------------
+exec/memory.i:     92 0000:                    
+exec/memory.i:     93 0000:                     STRUCTURE  MC,0
+exec/memory.i: +   93 0000:  0000 0000         MC          EQU     0
+exec/memory.i: +   93 0000:  0000 0000         SOFFSET     SET     0
+exec/memory.i:     94 0000:                        APTR    MC_NEXT		    ; ptr to next chunk
+exec/memory.i: +   94 0000:  0000 0000         MC_NEXT          EQU     SOFFSET
+exec/memory.i: +   94 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     95 0000:                        ULONG   MC_BYTES		    ; chunk byte size
+exec/memory.i: +   95 0000:  0000 0004         MC_BYTES          EQU     SOFFSET
+exec/memory.i: +   95 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     96 0000:                        APTR    MC_SIZE
+exec/memory.i: +   96 0000:  0000 0008         MC_SIZE          EQU     SOFFSET
+exec/memory.i: +   96 0000:  0000 000c         SOFFSET     SET     SOFFSET+4
+exec/memory.i:     97 0000:                    
+exec/memory.i:     98 0000:                    	ENDC	; EXEC_MEMORY_I
+dos/dos.i:      0 0000:                    	include "dos/dos.i"
+dos/dos.i:      1 0000:                    	IFND	DOS_DOS_I
+dos/dos.i:      2 0000:  0000 0001         DOS_DOS_I SET	1
+dos/dos.i:      3 0000:                    **	$Filename: dos/dos.i $
+dos/dos.i:      4 0000:                    **	$Release: 2.0 revision 2$
+dos/dos.i:      5 0000:                    **	$Revision: 36.13 $
+dos/dos.i:      6 0000:                    **	$Date: 90/07/12 $
+dos/dos.i:      7 0000:                    **
+dos/dos.i:      8 0000:                    **	Standard asm header for AmigaDOS 
+dos/dos.i:      9 0000:                    **
+dos/dos.i:     10 0000:                    **	(C) Copyright 1985,1986,1987,1988,1989,1990 Commodore-Amiga, Inc.
+dos/dos.i:     11 0000:                    **	    All Rights Reserved
+dos/dos.i:     12 0000:                    **
+dos/dos.i:     13 0000:                    
+dos/dos.i:     14 0000:                    DOSNAME	    MACRO
+dos/dos.i:     15 0000:                          DC.B  'dos.library',0
+dos/dos.i:     16 0000:                          ENDM
+dos/dos.i:     17 0000:                    
+dos/dos.i:     18 0000:                    * Predefined Amiga DOS global constants 
+dos/dos.i:     19 0000:                    
+dos/dos.i:     20 0000:  ffff ffff         DOSTRUE	      EQU     -1
+dos/dos.i:     21 0000:  0000 0000         DOSFALSE      EQU      0
+dos/dos.i:     22 0000:                    
+dos/dos.i:     23 0000:                    * Mode parameter to Open() 
+dos/dos.i:     24 0000:  0000 03ed         MODE_OLDFILE	     EQU   1005	  * Open existing file read/write 
+dos/dos.i:     25 0000:                    *				  * positioned at beginning of file. 
+dos/dos.i:     26 0000:  0000 03ee         MODE_NEWFILE	     EQU   1006	  * Open freshly created file (delete 
+dos/dos.i:     27 0000:                    *				  * old file) read/write	    
+dos/dos.i:     28 0000:  0000 03ec         MODE_READWRITE	     EQU   1004	  * Open old file w/exclusive lock
+dos/dos.i:     29 0000:                    * Relative position to Seek() 
+dos/dos.i:     30 0000:  ffff ffff         OFFSET_BEGINNING     EQU   -1	  * relative to Beginning Of File 
+dos/dos.i:     31 0000:  0000 0000         OFFSET_CURRENT	     EQU    0	  * relative to Current file position 
+dos/dos.i:     32 0000:  0000 0001         OFFSET_END	     EQU    1	  * relative to End Of File    
+dos/dos.i:     33 0000:                    
+dos/dos.i:     34 0000:  ffff ffff         OFFSET_BEGINING	    EQU	  OFFSET_BEGINNING     * Ancient compatibility
+dos/dos.i:     35 0000:                    
+dos/dos.i:     36 0000:  0000 0008         BITSPERBYTE	     EQU   8
+dos/dos.i:     37 0000:  0000 0004         BYTESPERLONG	     EQU   4
+dos/dos.i:     38 0000:  0000 0020         BITSPERLONG	     EQU   32
+dos/dos.i:     39 0000:  7fff ffff         MAXINT		     EQU   $7FFFFFFF
+dos/dos.i:     40 0000:  8000 0000         MININT		     EQU   $80000000
+dos/dos.i:     41 0000:                    
+dos/dos.i:     42 0000:                    * Passed as type to Lock() 
+dos/dos.i:     43 0000:  ffff fffe         SHARED_LOCK	     EQU   -2	; File is readable by others 
+dos/dos.i:     44 0000:  ffff fffe         ACCESS_READ	     EQU   -2	; Synonym
+dos/dos.i:     45 0000:  ffff ffff         EXCLUSIVE_LOCK	     EQU   -1	; No other access allowed    
+dos/dos.i:     46 0000:  ffff ffff         ACCESS_WRITE	     EQU   -1	; Synonym
+dos/dos.i:     47 0000:                    
+dos/dos.i:     48 0000:                    
+dos/dos.i:     49 0000:                     STRUCTURE DateStamp,0 
+dos/dos.i: +   49 0000:  0000 0000         DateStamp          EQU     0
+dos/dos.i: +   49 0000:  0000 0000         SOFFSET     SET     0
+dos/dos.i:     50 0000:                       LONG	 ds_Days		; Number of days since Jan. 1, 1978
+dos/dos.i: +   50 0000:  0000 0000         ds_Days          EQU     SOFFSET
+dos/dos.i: +   50 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     51 0000:                       LONG	 ds_Minute		; Number of minutes past midnight 
+dos/dos.i: +   51 0000:  0000 0004         ds_Minute          EQU     SOFFSET
+dos/dos.i: +   51 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     52 0000:                       LONG	 ds_Tick		; Number of ticks past minute 
+dos/dos.i: +   52 0000:  0000 0008         ds_Tick          EQU     SOFFSET
+dos/dos.i: +   52 0000:  0000 000c         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     53 0000:                       LABEL ds_SIZEOF		; DateStamp 
+dos/dos.i: +   53 0000:  0000 000c         ds_SIZEOF          EQU     SOFFSET
+dos/dos.i:     54 0000:  0000 0032         TICKS_PER_SECOND EQU 50		; Number of ticks in one second 
+dos/dos.i:     55 0000:                    
+dos/dos.i:     56 0000:                    * Returned by Examine() and ExInfo() 
+dos/dos.i:     57 0000:                     STRUCTURE FileInfoBlock,0
+dos/dos.i: +   57 0000:  0000 0000         FileInfoBlock          EQU     0
+dos/dos.i: +   57 0000:  0000 0000         SOFFSET     SET     0
+dos/dos.i:     58 0000:                       LONG	  fib_DiskKey
+dos/dos.i: +   58 0000:  0000 0000         fib_DiskKey          EQU     SOFFSET
+dos/dos.i: +   58 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     59 0000:                       LONG	  fib_DirEntryType	; Type of Directory. If < 0, then a plain file.
+dos/dos.i: +   59 0000:  0000 0004         fib_DirEntryType          EQU     SOFFSET
+dos/dos.i: +   59 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     60 0000:                    				; If > 0 a directory 
+dos/dos.i:     61 0000:                       STRUCT fib_FileName,108	; Null terminated. Max 30 chars used for now 
+dos/dos.i: +   61 0000:  0000 0008         fib_FileName          EQU     SOFFSET
+dos/dos.i: +   61 0000:  0000 0074         SOFFSET     SET     SOFFSET+108
+dos/dos.i:     62 0000:                       LONG	  fib_Protection	; bit mask of protection, rwxd are 3-0.	     
+dos/dos.i: +   62 0000:  0000 0074         fib_Protection          EQU     SOFFSET
+dos/dos.i: +   62 0000:  0000 0078         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     63 0000:                       LONG	  fib_EntryType
+dos/dos.i: +   63 0000:  0000 0078         fib_EntryType          EQU     SOFFSET
+dos/dos.i: +   63 0000:  0000 007c         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     64 0000:                       LONG	  fib_Size		; Number of bytes in file 
+dos/dos.i: +   64 0000:  0000 007c         fib_Size          EQU     SOFFSET
+dos/dos.i: +   64 0000:  0000 0080         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     65 0000:                       LONG	  fib_NumBlocks		; Number of blocks in file 
+dos/dos.i: +   65 0000:  0000 0080         fib_NumBlocks          EQU     SOFFSET
+dos/dos.i: +   65 0000:  0000 0084         SOFFSET     SET     SOFFSET+4
+dos/dos.i:     66 0000:                       STRUCT fib_DateStamp,ds_SIZEOF ; Date file last changed.
+dos/dos.i: +   66 0000:  0000 0084         fib_DateStamp          EQU     SOFFSET
+dos/dos.i: +   66 0000:  0000 0090         SOFFSET     SET     SOFFSET+ds_SIZEOF
+dos/dos.i:     67 0000:                       STRUCT fib_Comment,80	; Null terminated. Comment associated with file 
+dos/dos.i: +   67 0000:  0000 0090         fib_Comment          EQU     SOFFSET
+dos/dos.i: +   67 0000:  0000 00e0         SOFFSET     SET     SOFFSET+80
+dos/dos.i:     68 0000:                       STRUCT fib_Reserved,36
+dos/dos.i: +   68 0000:  0000 00e0         fib_Reserved          EQU     SOFFSET
+dos/dos.i: +   68 0000:  0000 0104         SOFFSET     SET     SOFFSET+36
+dos/dos.i:     69 0000:                       LABEL  fib_SIZEOF		; FileInfoBlock 
+dos/dos.i: +   69 0000:  0000 0104         fib_SIZEOF          EQU     SOFFSET
+dos/dos.i:     70 0000:                    
+dos/dos.i:     71 0000:                    * FIB stands for FileInfoBlock 
+dos/dos.i:     72 0000:                    * FIBB are bit definitions, FIBF are field definitions 
+dos/dos.i:     73 0000:                       BITDEF   FIB,SCRIPT,6	; program is an execute script
+dos/dos.i: +   73 0000:                                BITDEF0 FIB,SCRIPT,B_,6
+dos/dos.i: +   73 0000:  0000 0006         FIBB_SCRIPT      EQU     6
+dos/dos.i: +   73 0000:  0000 0040         .010BITDEF    SET     1<<6
+dos/dos.i: +   73 0000:                                BITDEF0 FIB,SCRIPT,F_,.010BITDEF
+dos/dos.i: +   73 0000:  0000 0040         FIBF_SCRIPT      EQU     .010BITDEF
+dos/dos.i:     74 0000:                       BITDEF   FIB,PURE,5		; program is reentrant and reexecutable
+dos/dos.i: +   74 0000:                                BITDEF0 FIB,PURE,B_,5
+dos/dos.i: +   74 0000:  0000 0005         FIBB_PURE      EQU     5
+dos/dos.i: +   74 0000:  0000 0020         .011BITDEF    SET     1<<5
+dos/dos.i: +   74 0000:                                BITDEF0 FIB,PURE,F_,.011BITDEF
+dos/dos.i: +   74 0000:  0000 0020         FIBF_PURE      EQU     .011BITDEF
+dos/dos.i:     75 0000:                       BITDEF   FIB,ARCHIVE,4	; cleared whenever file is changed
+dos/dos.i: +   75 0000:                                BITDEF0 FIB,ARCHIVE,B_,4
+dos/dos.i: +   75 0000:  0000 0004         FIBB_ARCHIVE      EQU     4
+dos/dos.i: +   75 0000:  0000 0010         .012BITDEF    SET     1<<4
+dos/dos.i: +   75 0000:                                BITDEF0 FIB,ARCHIVE,F_,.012BITDEF
+dos/dos.i: +   75 0000:  0000 0010         FIBF_ARCHIVE      EQU     .012BITDEF
+dos/dos.i:     76 0000:                       BITDEF   FIB,READ,3		; ignored by the system
+dos/dos.i: +   76 0000:                                BITDEF0 FIB,READ,B_,3
+dos/dos.i: +   76 0000:  0000 0003         FIBB_READ      EQU     3
+dos/dos.i: +   76 0000:  0000 0008         .013BITDEF    SET     1<<3
+dos/dos.i: +   76 0000:                                BITDEF0 FIB,READ,F_,.013BITDEF
+dos/dos.i: +   76 0000:  0000 0008         FIBF_READ      EQU     .013BITDEF
+dos/dos.i:     77 0000:                       BITDEF   FIB,WRITE,2		; ignored by the system
+dos/dos.i: +   77 0000:                                BITDEF0 FIB,WRITE,B_,2
+dos/dos.i: +   77 0000:  0000 0002         FIBB_WRITE      EQU     2
+dos/dos.i: +   77 0000:  0000 0004         .014BITDEF    SET     1<<2
+dos/dos.i: +   77 0000:                                BITDEF0 FIB,WRITE,F_,.014BITDEF
+dos/dos.i: +   77 0000:  0000 0004         FIBF_WRITE      EQU     .014BITDEF
+dos/dos.i:     78 0000:                       BITDEF   FIB,EXECUTE,1	; ignored by the system
+dos/dos.i: +   78 0000:                                BITDEF0 FIB,EXECUTE,B_,1
+dos/dos.i: +   78 0000:  0000 0001         FIBB_EXECUTE      EQU     1
+dos/dos.i: +   78 0000:  0000 0002         .015BITDEF    SET     1<<1
+dos/dos.i: +   78 0000:                                BITDEF0 FIB,EXECUTE,F_,.015BITDEF
+dos/dos.i: +   78 0000:  0000 0002         FIBF_EXECUTE      EQU     .015BITDEF
+dos/dos.i:     79 0000:                       BITDEF   FIB,DELETE,0	; prevent file from being deleted
+dos/dos.i: +   79 0000:                                BITDEF0 FIB,DELETE,B_,0
+dos/dos.i: +   79 0000:  0000 0000         FIBB_DELETE      EQU     0
+dos/dos.i: +   79 0000:  0000 0001         .016BITDEF    SET     1<<0
+dos/dos.i: +   79 0000:                                BITDEF0 FIB,DELETE,F_,.016BITDEF
+dos/dos.i: +   79 0000:  0000 0001         FIBF_DELETE      EQU     .016BITDEF
+dos/dos.i:     80 0000:                    
+dos/dos.i:     81 0000:                    * Standard maximum length for an error string from fault.  However, most
+dos/dos.i:     82 0000:                    * error strings should be kept under 60 characters if possible.  Don't
+dos/dos.i:     83 0000:                    * forget space for the header you pass in.
+dos/dos.i:     84 0000:  0000 0052         FAULT_MAX	EQU	82
+dos/dos.i:     85 0000:                    
+dos/dos.i:     86 0000:                    * All BCPL data must be long word aligned.  BCPL pointers are the long word
+dos/dos.i:     87 0000:                    * address (i.e byte address divided by 4 (>>2))
+dos/dos.i:     88 0000:                    
+dos/dos.i:     89 0000:                    * Macro to indicate BCPL pointers
+dos/dos.i:     90 0000:                    BPTR	 MACRO			    * Long word pointer
+dos/dos.i:     91 0000:                    	 LONG	  \1
+dos/dos.i:     92 0000:                    	 ENDM
+dos/dos.i:     93 0000:                    BSTR	 MACRO			    * Long word pointer to BCPL string.
+dos/dos.i:     94 0000:                    	 LONG	  \1
+dos/dos.i:     95 0000:                    	 ENDM
+dos/dos.i:     96 0000:                    
+dos/dos.i:     97 0000:                    * #define BADDR( bptr ) (bptr << 2) * Convert BPTR to byte addressed pointer
+dos/dos.i:     98 0000:                    
+dos/dos.i:     99 0000:                    * BCPL strings have a length in the first byte and then the characters.
+dos/dos.i:    100 0000:                    * For example:	s[0]=3 s[1]=S s[2]=Y s[3]=S
+dos/dos.i:    101 0000:                    
+dos/dos.i:    102 0000:                    * returned by Info() 
+dos/dos.i:    103 0000:                     STRUCTURE InfoData,0
+dos/dos.i: +  103 0000:  0000 0000         InfoData          EQU     0
+dos/dos.i: +  103 0000:  0000 0000         SOFFSET     SET     0
+dos/dos.i:    104 0000:                       LONG id_NumSoftErrors	* number of soft errors on disk 
+dos/dos.i: +  104 0000:  0000 0000         id_NumSoftErrors          EQU     SOFFSET
+dos/dos.i: +  104 0000:  0000 0004         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    105 0000:                       LONG id_UnitNumber		* Which unit disk is (was) mounted on 
+dos/dos.i: +  105 0000:  0000 0004         id_UnitNumber          EQU     SOFFSET
+dos/dos.i: +  105 0000:  0000 0008         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    106 0000:                       LONG id_DiskState		* See defines below 
+dos/dos.i: +  106 0000:  0000 0008         id_DiskState          EQU     SOFFSET
+dos/dos.i: +  106 0000:  0000 000c         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    107 0000:                       LONG id_NumBlocks		* Number of blocks on disk 
+dos/dos.i: +  107 0000:  0000 000c         id_NumBlocks          EQU     SOFFSET
+dos/dos.i: +  107 0000:  0000 0010         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    108 0000:                       LONG id_NumBlocksUsed	* Number of block in use 
+dos/dos.i: +  108 0000:  0000 0010         id_NumBlocksUsed          EQU     SOFFSET
+dos/dos.i: +  108 0000:  0000 0014         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    109 0000:                       LONG id_BytesPerBlock   
+dos/dos.i: +  109 0000:  0000 0014         id_BytesPerBlock          EQU     SOFFSET
+dos/dos.i: +  109 0000:  0000 0018         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    110 0000:                       LONG id_DiskType		* Disk Type code
+dos/dos.i: +  110 0000:  0000 0018         id_DiskType          EQU     SOFFSET
+dos/dos.i: +  110 0000:  0000 001c         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    111 0000:                       BPTR id_VolumeNode		* BCPL pointer to volume node
+dos/dos.i: +  111 0000:                    	 LONG	  id_VolumeNode
+dos/dos.i: +  111 0000:  0000 001c         id_VolumeNode          EQU     SOFFSET
+dos/dos.i: +  111 0000:  0000 0020         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    112 0000:                       LONG id_InUse		* Flag, zero if not in use
+dos/dos.i: +  112 0000:  0000 0020         id_InUse          EQU     SOFFSET
+dos/dos.i: +  112 0000:  0000 0024         SOFFSET     SET     SOFFSET+4
+dos/dos.i:    113 0000:                       LABEL id_SIZEOF		* InfoData 
+dos/dos.i: +  113 0000:  0000 0024         id_SIZEOF          EQU     SOFFSET
+dos/dos.i:    114 0000:                    
+dos/dos.i:    115 0000:                    * ID stands for InfoData 
+dos/dos.i:    116 0000:                    *	     Disk states
+dos/dos.i:    117 0000:  0000 0050         ID_WRITE_PROTECTED	EQU	80	* Disk is write protected 
+dos/dos.i:    118 0000:  0000 0051         ID_VALIDATING		EQU	81	* Disk is currently being validated 
+dos/dos.i:    119 0000:  0000 0052         ID_VALIDATED		EQU	82	* Disk is consistent and writeable 
+dos/dos.i:    120 0000:                    *	   Disk types 
+dos/dos.i:    121 0000:  ffff ffff         ID_NO_DISK_PRESENT	EQU -1
+dos/dos.i:    122 0000:  4241 4400         ID_UNREADABLE_DISK	EQU  ('B'<<24)!('A'<<16)!('D'<<8)
+dos/dos.i:    123 0000:  4e44 4f53         ID_NOT_REALLY_DOS	EQU  ('N'<<24)!('D'<<16)!('O'<<8)!('S')
+dos/dos.i:    124 0000:  444f 5300         ID_DOS_DISK		EQU  ('D'<<24)!('O'<<16)!('S'<<8)
+dos/dos.i:    125 0000:  444f 5301         ID_FFS_DISK		EQU  ('D'<<24)!('O'<<16)!('S'<<8)!(1)
+dos/dos.i:    126 0000:  4b49 434b         ID_KICKSTART_DISK	EQU  ('K'<<24)!('I'<<16)!('C'<<8)!('K')
+dos/dos.i:    127 0000:                    
+dos/dos.i:    128 0000:                    * Errors from IoErr(), etc. 
+dos/dos.i:    129 0000:  0000 0067         ERROR_NO_FREE_STORE		  EQU  103
+dos/dos.i:    130 0000:  0000 0069         ERROR_TASK_TABLE_FULL		  EQU  105
+dos/dos.i:    131 0000:  0000 0072         ERROR_BAD_TEMPLATE		  EQU  114
+dos/dos.i:    132 0000:  0000 0073         ERROR_BAD_NUMBER		  EQU  115
+dos/dos.i:    133 0000:  0000 0074         ERROR_REQUIRED_ARG_MISSING	  EQU  116
+dos/dos.i:    134 0000:  0000 0075         ERROR_KEY_NEEDS_ARG		  EQU  117
+dos/dos.i:    135 0000:  0000 0076         ERROR_TOO_MANY_ARGS		  EQU  118
+dos/dos.i:    136 0000:  0000 0077         ERROR_UNMATCHED_QUOTES		  EQU  119
+dos/dos.i:    137 0000:  0000 0078         ERROR_LINE_TOO_LONG		  EQU  120
+dos/dos.i:    138 0000:  0000 0079         ERROR_FILE_NOT_OBJECT		  EQU  121
+dos/dos.i:    139 0000:  0000 007a         ERROR_INVALID_RESIDENT_LIBRARY	  EQU  122
+dos/dos.i:    140 0000:  0000 00c9         ERROR_NO_DEFAULT_DIR		  EQU  201
+dos/dos.i:    141 0000:  0000 00ca         ERROR_OBJECT_IN_USE		  EQU  202
+dos/dos.i:    142 0000:  0000 00cb         ERROR_OBJECT_EXISTS		  EQU  203
+dos/dos.i:    143 0000:  0000 00cc         ERROR_DIR_NOT_FOUND		  EQU  204
+dos/dos.i:    144 0000:  0000 00cd         ERROR_OBJECT_NOT_FOUND		  EQU  205
+dos/dos.i:    145 0000:  0000 00ce         ERROR_BAD_STREAM_NAME		  EQU  206
+dos/dos.i:    146 0000:  0000 00cf         ERROR_OBJECT_TOO_LARGE		  EQU  207
+dos/dos.i:    147 0000:  0000 00d1         ERROR_ACTION_NOT_KNOWN		  EQU  209
+dos/dos.i:    148 0000:  0000 00d2         ERROR_INVALID_COMPONENT_NAME	  EQU  210
+dos/dos.i:    149 0000:  0000 00d3         ERROR_INVALID_LOCK		  EQU  211
+dos/dos.i:    150 0000:  0000 00d4         ERROR_OBJECT_WRONG_TYPE		  EQU  212
+dos/dos.i:    151 0000:  0000 00d5         ERROR_DISK_NOT_VALIDATED	  EQU  213
+dos/dos.i:    152 0000:  0000 00d6         ERROR_DISK_WRITE_PROTECTED	  EQU  214
+dos/dos.i:    153 0000:  0000 00d7         ERROR_RENAME_ACROSS_DEVICES	  EQU  215
+dos/dos.i:    154 0000:  0000 00d8         ERROR_DIRECTORY_NOT_EMPTY	  EQU  216
+dos/dos.i:    155 0000:  0000 00d9         ERROR_TOO_MANY_LEVELS		  EQU  217
+dos/dos.i:    156 0000:  0000 00da         ERROR_DEVICE_NOT_MOUNTED	  EQU  218
+dos/dos.i:    157 0000:  0000 00db         ERROR_SEEK_ERROR		  EQU  219
+dos/dos.i:    158 0000:  0000 00dc         ERROR_COMMENT_TOO_BIG		  EQU  220   
+dos/dos.i:    159 0000:  0000 00dd         ERROR_DISK_FULL			  EQU  221
+dos/dos.i:    160 0000:  0000 00de         ERROR_DELETE_PROTECTED		  EQU  222
+dos/dos.i:    161 0000:  0000 00df         ERROR_WRITE_PROTECTED		  EQU  223 
+dos/dos.i:    162 0000:  0000 00e0         ERROR_READ_PROTECTED		  EQU  224
+dos/dos.i:    163 0000:  0000 00e1         ERROR_NOT_A_DOS_DISK		  EQU  225
+dos/dos.i:    164 0000:  0000 00e2         ERROR_NO_DISK			  EQU  226
+dos/dos.i:    165 0000:  0000 00e8         ERROR_NO_MORE_ENTRIES		  EQU  232
+dos/dos.i:    166 0000:                    * added for 1.4
+dos/dos.i:    167 0000:  0000 00e9         ERROR_IS_SOFT_LINK		  EQU  233
+dos/dos.i:    168 0000:  0000 00ea         ERROR_OBJECT_LINKED		  EQU  234
+dos/dos.i:    169 0000:  0000 00eb         ERROR_BAD_HUNK			  EQU  235
+dos/dos.i:    170 0000:  0000 00f0         ERROR_RECORD_NOT_LOCKED		  EQU  240
+dos/dos.i:    171 0000:  0000 00f1         ERROR_LOCK_COLLISION		  EQU  241
+dos/dos.i:    172 0000:  0000 00f2         ERROR_LOCK_TIMEOUT		  EQU  242
+dos/dos.i:    173 0000:  0000 00f3         ERROR_UNLOCK_ERROR		  EQU  243
+dos/dos.i:    174 0000:                    
+dos/dos.i:    175 0000:                    * error codes 303-305 are defined in dosasl.i
+dos/dos.i:    176 0000:                    
+dos/dos.i:    177 0000:                    * These are the return codes used by convention by AmigaDOS commands 
+dos/dos.i:    178 0000:                    * See FAILAT and IF for relvance to EXECUTE files		     
+dos/dos.i:    179 0000:  0000 0000         RETURN_OK			  EQU	 0  * No problems, success 
+dos/dos.i:    180 0000:  0000 0005         RETURN_WARN			  EQU	 5  * A warning only 
+dos/dos.i:    181 0000:  0000 000a         RETURN_ERROR			  EQU	10  * Something wrong 
+dos/dos.i:    182 0000:  0000 0014         RETURN_FAIL			  EQU	20  * Complete or severe failure
+dos/dos.i:    183 0000:                    
+dos/dos.i:    184 0000:                    * Bit numbers that signal you that a user has issued a break
+dos/dos.i:    185 0000:                    * for example: if (SetSignal(0,0) & SIGBREAKF_CTRL_C) cleanup_and_exit();
+dos/dos.i:    186 0000:                    	BITDEF	SIGBREAK,CTRL_C,12
+dos/dos.i: +  186 0000:                                BITDEF0 SIGBREAK,CTRL_C,B_,12
+dos/dos.i: +  186 0000:  0000 000c         SIGBREAKB_CTRL_C      EQU     12
+dos/dos.i: +  186 0000:  0000 1000         .017BITDEF    SET     1<<12
+dos/dos.i: +  186 0000:                                BITDEF0 SIGBREAK,CTRL_C,F_,.017BITDEF
+dos/dos.i: +  186 0000:  0000 1000         SIGBREAKF_CTRL_C      EQU     .017BITDEF
+dos/dos.i:    187 0000:                    	BITDEF	SIGBREAK,CTRL_D,13
+dos/dos.i: +  187 0000:                                BITDEF0 SIGBREAK,CTRL_D,B_,13
+dos/dos.i: +  187 0000:  0000 000d         SIGBREAKB_CTRL_D      EQU     13
+dos/dos.i: +  187 0000:  0000 2000         .018BITDEF    SET     1<<13
+dos/dos.i: +  187 0000:                                BITDEF0 SIGBREAK,CTRL_D,F_,.018BITDEF
+dos/dos.i: +  187 0000:  0000 2000         SIGBREAKF_CTRL_D      EQU     .018BITDEF
+dos/dos.i:    188 0000:                    	BITDEF	SIGBREAK,CTRL_E,14
+dos/dos.i: +  188 0000:                                BITDEF0 SIGBREAK,CTRL_E,B_,14
+dos/dos.i: +  188 0000:  0000 000e         SIGBREAKB_CTRL_E      EQU     14
+dos/dos.i: +  188 0000:  0000 4000         .019BITDEF    SET     1<<14
+dos/dos.i: +  188 0000:                                BITDEF0 SIGBREAK,CTRL_E,F_,.019BITDEF
+dos/dos.i: +  188 0000:  0000 4000         SIGBREAKF_CTRL_E      EQU     .019BITDEF
+dos/dos.i:    189 0000:                    	BITDEF	SIGBREAK,CTRL_F,15
+dos/dos.i: +  189 0000:                                BITDEF0 SIGBREAK,CTRL_F,B_,15
+dos/dos.i: +  189 0000:  0000 000f         SIGBREAKB_CTRL_F      EQU     15
+dos/dos.i: +  189 0000:  0000 8000         .020BITDEF    SET     1<<15
+dos/dos.i: +  189 0000:                                BITDEF0 SIGBREAK,CTRL_F,F_,.020BITDEF
+dos/dos.i: +  189 0000:  0000 8000         SIGBREAKF_CTRL_F      EQU     .020BITDEF
+dos/dos.i:    190 0000:                    
+dos/dos.i:    191 0000:                    * Values returned by SameLock()
+dos/dos.i:    192 0000:  0000 0000         LOCK_SAME		EQU	0
+dos/dos.i:    193 0000:  0000 0001         LOCK_SAME_HANDLER	EQU	1
+dos/dos.i:    194 0000:  ffff ffff         LOCK_DIFFERENT		EQU	-1
+dos/dos.i:    195 0000:                    
+dos/dos.i:    196 0000:                    * types for ChangeMode()
+dos/dos.i:    197 0000:  0000 0000         CHANGE_LOCK	EQU	0
+dos/dos.i:    198 0000:  0000 0001         CHANGE_FH	EQU	1
+dos/dos.i:    199 0000:                    
+dos/dos.i:    200 0000:                    * Values for MakeLink()
+dos/dos.i:    201 0000:  0000 0000         LINK_HARD	EQU	0
+dos/dos.i:    202 0000:  0000 0001         LINK_SOFT	EQU	1
+dos/dos.i:    203 0000:                    
+dos/dos.i:    204 0000:                    * values returned by ReadItem
+dos/dos.i:    205 0000:  ffff fffe         ITEM_EQUAL	EQU	-2		; "=" Symbol
+dos/dos.i:    206 0000:  ffff ffff         ITEM_ERROR	EQU	-1		; error
+dos/dos.i:    207 0000:  0000 0000         ITEM_NOTHING	EQU	0		; *N, ;, endstreamch
+dos/dos.i:    208 0000:  0000 0001         ITEM_UNQUOTED	EQU	1		; unquoted item
+dos/dos.i:    209 0000:  0000 0002         ITEM_QUOTED	EQU	2		; quoted item
+dos/dos.i:    210 0000:                    
+dos/dos.i:    211 0000:                    * types for AllocDosObject/FreeDosObject
+dos/dos.i:    212 0000:  0000 0000         DOS_FILEHANDLE		EQU	0	; few people should use this
+dos/dos.i:    213 0000:  0000 0001         DOS_EXALLCONTROL	EQU	1	; Must be used to allocate this!
+dos/dos.i:    214 0000:  0000 0002         DOS_FIB			EQU	2	; useful
+dos/dos.i:    215 0000:  0000 0003         DOS_STDPKT		EQU	3	; for doing packet-level I/O
+dos/dos.i:    216 0000:  0000 0004         DOS_CLI			EQU	4	; for shell-writers, etc
+dos/dos.i:    217 0000:                    
+dos/dos.i:    218 0000:                    	ENDC	; DOS_DOS_I
+    27 0000:                    
+    28 0000:                    init:
+    29 0000:  48e7 340e         	movem.l d2-d3/d5/a4-a6,-(sp)
+    30 0004:  2c78 0004         	move.l	(_AbsExecBase).w,a6
+    31 0008:  700c              	moveq.l #12,d0
+    32 000a:  4840              	swap	d0
+    33 000c:  7203              	move.l	#(MEMF_PUBLIC!MEMF_CHIP),d1
+    34 000e:  4eae ff3a         	jsr	(_LVOAllocMem).w(a6)
+    35 0012:  4a80              	tst.l	d0
+    36 0014:  6700 xxxx         	beq	noMemory
+    37 0018:  2840              	move.l	d0,a4			; a4 := ptr to bonus1.3 & kick2.04
+    38 001a:  43f9 xxxx xxxx    	lea.l	dosName,a1
+    39 0020:  7000              	moveq.l #0,d0
+    40 0022:  4eae fdd8         	jsr	(_LVOOpenLibrary).w(a6)
+    41 0026:  4a80              	tst.l	d0
+    42 0028:  6700 xxxx         	beq	noDos
+    43 002c:  2a40              	move.l	d0,a5			; a5 := DOSBase
+    44 002e:  2c40              	move.l	d0,a6
+    45 0030:  41f9 xxxx xxxx    	lea.l	bonusName,a0
+    46 0036:  2208              	move.l	a0,d1
+    47 0038:  243c 0000 03ed    	move.l	#MODE_OLDFILE,d2
+    48 003e:  4eae ffe2         	jsr	(_LVOOpen).w(a6)
+    49 0042:  2200              	move.l	d0,d1
+    50 0044:  67xx              	beq.s	noFile
+    51 0046:  2a00              	move.l	d0,d5			; d5 := handle for bonus
+    52 0048:  240c              	move.l	a4,d2
+    53 004a:  7604              	moveq.l #4,d3
+    54 004c:  4843              	swap	d3
+    55 004e:  4eae ffd6         	jsr	(_LVORead).w(a6)
+    56 0052:  2205              	move.l	d5,d1
+    57 0054:  4eae ffdc         	jsr	(_LVOClose).w(a6)
+    58 0058:  41f9 xxxx xxxx    	lea.l	kickName,a0
+    59 005e:  2208              	move.l	a0,d1
+    60 0060:  243c 0000 03ed    	move.l	#MODE_OLDFILE,d2
+    61 0066:  4eae ffe2         	jsr	(_LVOOpen).w(a6)
+    62 006a:  2200              	move.l	d0,d1
+    63 006c:  67xx              	beq.s	noFile
+    64 006e:  2a00              	move.l	d0,d5			; d5 := handle for kick
+    65 0070:  240c              	move.l	a4,d2
+    66 0072:  d483              	add.l	d3,d2
+    67 0074:  7608              	moveq.l #8,d3
+    68 0076:  4843              	swap	d3
+    69 0078:  4eae ffd6         	jsr	(_LVORead).w(a6)
+    70 007c:  2205              	move.l	d5,d1
+    71 007e:  4eae ffdc         	jsr	(_LVOClose).w(a6)
+    72 0082:  41f9 xxxx xxxx    	lea.l	mmuInit,a0
+    73 0088:  203c xxxx xxxx    	move.l	#((mmuInitSize/2)-1),d0
+    74 008e:  224c              	move.l	a4,a1
+    75 0090:                    initLoop:
+    76 0090:  32d8              	move.w	(a0)+,(a1)+
+    77 0092:  51c8 fffc         	dbf	d0,initLoop
+    78 0096:  2c78 0004         	move.l	(_AbsExecBase).w,a6
+    79 009a:  4bf9 xxxx xxxx    	lea.l	initSCode,a5
+    80 00a0:  4eae ffe2         	jsr	(_LVOSupervisor).w(a6)
+    81 00a4:                    noFile:
+    82 00a4:  2c78 0004         	move.l	(_AbsExecBase).w,a6
+    83 00a8:  224d              	move.l	a5,a1
+    84 00aa:  4eae fe62         	jsr	(_LVOCloseLibrary).w(a6)
+    85 00ae:                    noDos:
+    86 00ae:  224c              	move.l	a4,a1
+    87 00b0:  700c              	moveq.l #12,d0
+    88 00b2:  4840              	swap	d0
+    89 00b4:  4eae ff2e         	jsr	(_LVOFreeMem).w(a6)
+    90 00b8:                    noMemory:
+    91 00b8:  4cdf 702c         	movem.l (sp)+,d2-d3/d5/a4-a6
+    92 00bc:  700a              	moveq.l #10,d0
+    93 00be:  4e75              	rts
+    94 00c0:                    
+    95 00c0:                    initSCode:				; a4 := ptr to bonus&kick
+    96 00c0:  41f9 xxxx xxxx    	lea.l	null,a0
+    97 00c6:  f010 4000         	pmove	(a0),tc
+    98 00ca:  43f9 07f4 0000    	lea.l	($7f40000).l,a1
+    99 00d0:  204c              	move.l	a4,a0
+   100 00d2:  700b              	moveq.l #11,d0
+   101 00d4:  72ff              	moveq.l #-1,d1
+   102 00d6:                    initSCodeLoop:
+   103 00d6:  32d8              	move.w	(a0)+,(a1)+
+   104 00d8:  51c9 fffc         	dbf	d1,initSCodeLoop
+   105 00dc:  51c8 fff8         	dbf	d0,initSCodeLoop
+   106 00e0:  4eb9 07f4 000c    	jsr	$7f4000c
+   107 00e6:  4e73              	rte
+   108 00e8:                    
+   109 00e8:                    null:
+   110 00e8:  0000 0000         	dc.l	0
+   111 00ec:                    
+   112 00ec:                    dosName:
+   113 00ec:  646f 732e 6c69    	dc.b	'dos.library',0
+       00f2:  6272 6172 7900 
+   114 00f8:                    
+   115 00f8:                    bonusName:
+   116 00f8:  6b69 636b 312e    	dc.b	'kick1.3_bonus',0
+       00fe:  335f 626f 6e75 
+       0104:  7300 
+   117 0106:                    
+   118 0106:                    kickName:
+   119 0106:  6b69 636b 322e    	dc.b	'kick2.04',0
+       010c:  3034 00
+   120 0110:                    	ds.w	0
+   121 0110:                    
+   122 0110:                    	cnop	0,16
+   123 0110:                    mmuInit:
+   124 0110:  0000 feed         	dc.l	$0000feed	; ?
+   125 0114:  c0ed babe         	dc.l	$c0edbabe	; ?
+   126 0118:  0000 0002         	dc.l	$00000002	; ?
+   127 011c:                    
+   128 011c:  2c78 0004         	move.l	(4).w,a6
+   129 0120:  33fc 4000 00df    	move.w	#$4000,$dff09a
+       0126:  f09a 
+   130 0128:  522e 0126         	addq.b	#1,$126(a6)
+   131 012c:  4bf9 xxxx xxxx    	lea.l	(mmuInitSCode-mmuInit+$7f40000).l,a5
+   132 0132:  4eee ffe2         	jmp	(_LVOSupervisor).w(a6)
+   133 0136:                    mmuInitSCode:
+   134 0136:  41f9 xxxx xxxx    	lea.l	(mmuRegs-mmuInit+$7f40000).l,a0
+   135 013c:  f010 4c00         	pmove	(a0),crp
+   136 0140:  5048              	addq.w	#8,a0
+   137 0142:  f010 4000         	pmove	(a0),tc
+   138 0146:  5848              	addq.w	#4,a0
+   139 0148:  f010 4800         	pmove	(a0),srp
+   140 014c:  21fc 0000 4ef9    	move.l	#$4ef9,(0).w
+       0152:  0000 
+   141 0154:  41f9 00f8 0002    	lea.l	($f80002).l,a0
+   142 015a:  21c8 0004         	move.l	a0,(4).w
+   143 015e:  4e70              	reset
+   144 0160:  4ed0              	jmp	(a0)
+   145 0162:                    
+   146 0162:                    mmuRegs:
+   147 0162:  8000 0002 xxxx    	dc.l	$80000002,(mmuTable1-mmuInit+$7f40000)	; := crp
+       0168:  xxxx 
+   148 016a:  80f0 8630         	dc.l	$80f08630				; := tc
+   149 016e:  0000 0000 0000    	dc.l	0,0					; := srp
+       0174:  0000 
+   150 0176:                    
+   151 0180:                    	cnop	0,16
+   152 0180:                    mmuTable1:
+   153 0180:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0186:  xxxx 
+   154 0188:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       018e:  xxxx 
+   155 0190:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0196:  xxxx 
+   156 0198:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       019e:  xxxx 
+   157 01a0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01a6:  xxxx 
+   158 01a8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01ae:  xxxx 
+   159 01b0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01b6:  xxxx 
+   160 01b8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01be:  xxxx 
+   161 01c0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01c6:  xxxx 
+   162 01c8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01ce:  xxxx 
+   163 01d0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01d6:  xxxx 
+   164 01d8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       01de:  xxxx 
+   165 01e0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01e6:  xxxx 
+   166 01e8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01ee:  xxxx 
+   167 01f0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01f6:  xxxx 
+   168 01f8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       01fe:  xxxx 
+   169 0200:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0206:  xxxx 
+   170 0208:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       020e:  xxxx 
+   171 0210:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0216:  xxxx 
+   172 0218:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       021e:  xxxx 
+   173 0220:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0226:  xxxx 
+   174 0228:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       022e:  xxxx 
+   175 0230:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0236:  xxxx 
+   176 0238:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       023e:  xxxx 
+   177 0240:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0246:  xxxx 
+   178 0248:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       024e:  xxxx 
+   179 0250:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0256:  xxxx 
+   180 0258:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       025e:  xxxx 
+   181 0260:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0266:  xxxx 
+   182 0268:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       026e:  xxxx 
+   183 0270:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0276:  xxxx 
+   184 0278:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       027e:  xxxx 
+   185 0280:                    
+   186 0280:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0286:  xxxx 
+   187 0288:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       028e:  xxxx 
+   188 0290:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0296:  xxxx 
+   189 0298:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       029e:  xxxx 
+   190 02a0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02a6:  xxxx 
+   191 02a8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02ae:  xxxx 
+   192 02b0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02b6:  xxxx 
+   193 02b8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02be:  xxxx 
+   194 02c0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02c6:  xxxx 
+   195 02c8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02ce:  xxxx 
+   196 02d0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02d6:  xxxx 
+   197 02d8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       02de:  xxxx 
+   198 02e0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02e6:  xxxx 
+   199 02e8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02ee:  xxxx 
+   200 02f0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02f6:  xxxx 
+   201 02f8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       02fe:  xxxx 
+   202 0300:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0306:  xxxx 
+   203 0308:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       030e:  xxxx 
+   204 0310:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0316:  xxxx 
+   205 0318:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       031e:  xxxx 
+   206 0320:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0326:  xxxx 
+   207 0328:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       032e:  xxxx 
+   208 0330:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0336:  xxxx 
+   209 0338:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       033e:  xxxx 
+   210 0340:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0346:  xxxx 
+   211 0348:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       034e:  xxxx 
+   212 0350:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0356:  xxxx 
+   213 0358:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       035e:  xxxx 
+   214 0360:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0366:  xxxx 
+   215 0368:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       036e:  xxxx 
+   216 0370:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0376:  xxxx 
+   217 0378:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       037e:  xxxx 
+   218 0380:                    
+   219 0380:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0386:  xxxx 
+   220 0388:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       038e:  xxxx 
+   221 0390:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0396:  xxxx 
+   222 0398:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       039e:  xxxx 
+   223 03a0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03a6:  xxxx 
+   224 03a8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03ae:  xxxx 
+   225 03b0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03b6:  xxxx 
+   226 03b8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03be:  xxxx 
+   227 03c0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03c6:  xxxx 
+   228 03c8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03ce:  xxxx 
+   229 03d0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03d6:  xxxx 
+   230 03d8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       03de:  xxxx 
+   231 03e0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03e6:  xxxx 
+   232 03e8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03ee:  xxxx 
+   233 03f0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03f6:  xxxx 
+   234 03f8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       03fe:  xxxx 
+   235 0400:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0406:  xxxx 
+   236 0408:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       040e:  xxxx 
+   237 0410:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0416:  xxxx 
+   238 0418:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       041e:  xxxx 
+   239 0420:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0426:  xxxx 
+   240 0428:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       042e:  xxxx 
+   241 0430:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0436:  xxxx 
+   242 0438:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       043e:  xxxx 
+   243 0440:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0446:  xxxx 
+   244 0448:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       044e:  xxxx 
+   245 0450:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0456:  xxxx 
+   246 0458:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       045e:  xxxx 
+   247 0460:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0466:  xxxx 
+   248 0468:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       046e:  xxxx 
+   249 0470:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0476:  xxxx 
+   250 0478:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       047e:  xxxx 
+   251 0480:                    
+   252 0480:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0486:  xxxx 
+   253 0488:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       048e:  xxxx 
+   254 0490:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0496:  xxxx 
+   255 0498:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       049e:  xxxx 
+   256 04a0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04a6:  xxxx 
+   257 04a8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04ae:  xxxx 
+   258 04b0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04b6:  xxxx 
+   259 04b8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04be:  xxxx 
+   260 04c0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04c6:  xxxx 
+   261 04c8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04ce:  xxxx 
+   262 04d0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04d6:  xxxx 
+   263 04d8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       04de:  xxxx 
+   264 04e0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04e6:  xxxx 
+   265 04e8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04ee:  xxxx 
+   266 04f0:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04f6:  xxxx 
+   267 04f8:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       04fe:  xxxx 
+   268 0500:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0506:  xxxx 
+   269 0508:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       050e:  xxxx 
+   270 0510:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0516:  xxxx 
+   271 0518:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       051e:  xxxx 
+   272 0520:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0526:  xxxx 
+   273 0528:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       052e:  xxxx 
+   274 0530:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0536:  xxxx 
+   275 0538:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       053e:  xxxx 
+   276 0540:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0546:  xxxx 
+   277 0548:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       054e:  xxxx 
+   278 0550:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0556:  xxxx 
+   279 0558:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable3-mmuInit+$7f40002)
+       055e:  xxxx 
+   280 0560:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0566:  xxxx 
+   281 0568:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       056e:  xxxx 
+   282 0570:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       0576:  xxxx 
+   283 0578:  xxxx xxxx xxxx    	dc.l	(mmuTable2-mmuInit+$7f40002),(mmuTable2-mmuInit+$7f40002)
+       057e:  xxxx 
+   284 0580:                    
+   285 0580:                    	cnop	0,16
+   286 0580:                    mmuTable2:
+   287 0580:  0000 0041 0004    	dc.l	$00000041,$00040041,$00080041,$000c0041
+       0586:  0041 0008 0041 
+       058c:  000c 0041 
+   288 0590:  0010 0041 0014    	dc.l	$00100041,$00140041,$00180041,$001c0041
+       0596:  0041 0018 0041 
+       059c:  001c 0041 
+   289 05a0:  0020 0001 0024    	dc.l	$00200001,$00240001,$00280001,$002c0001
+       05a6:  0001 0028 0001 
+       05ac:  002c 0001 
+   290 05b0:  0030 0001 0034    	dc.l	$00300001,$00340001,$00380001,$003c0001
+       05b6:  0001 0038 0001 
+       05bc:  003c 0001 
+   291 05c0:  0040 0001 0044    	dc.l	$00400001,$00440001,$00480001,$004c0001
+       05c6:  0001 0048 0001 
+       05cc:  004c 0001 
+   292 05d0:  0050 0001 0054    	dc.l	$00500001,$00540001,$00580001,$005c0001
+       05d6:  0001 0058 0001 
+       05dc:  005c 0001 
+   293 05e0:  0060 0001 0064    	dc.l	$00600001,$00640001,$00680001,$006c0001
+       05e6:  0001 0068 0001 
+       05ec:  006c 0001 
+   294 05f0:  0070 0001 0074    	dc.l	$00700001,$00740001,$00780001,$007c0001
+       05f6:  0001 0078 0001 
+       05fc:  007c 0001 
+   295 0600:                    
+   296 0600:  0080 0001 0084    	dc.l	$00800001,$00840001,$00880001,$008c0001
+       0606:  0001 0088 0001 
+       060c:  008c 0001 
+   297 0610:  0090 0001 0094    	dc.l	$00900001,$00940001,$00980001,$009c0001
+       0616:  0001 0098 0001 
+       061c:  009c 0001 
+   298 0620:  00a0 0001 00a4    	dc.l	$00a00001,$00a40001,$00a80001,$00ac0001
+       0626:  0001 00a8 0001 
+       062c:  00ac 0001 
+   299 0630:  00b0 0001 00b4    	dc.l	$00b00001,$00b40001,$00b80001,$00bc0041
+       0636:  0001 00b8 0001 
+       063c:  00bc 0041 
+   300 0640:  00c0 0001 00c4    	dc.l	$00c00001,$00c40001,$00c80001,$00cc0001
+       0646:  0001 00c8 0001 
+       064c:  00cc 0001 
+   301 0650:  00d0 0001 00d4    	dc.l	$00d00001,$00d40001,$00d80001,$00dc0041
+       0656:  0001 00d8 0001 
+       065c:  00dc 0041 
+   302 0660:  00e0 0001 00e4    	dc.l	$00e00001,$00e40001,$00e80041,$00ec0041
+       0666:  0001 00e8 0041 
+       066c:  00ec 0041 
+   303 0670:  07f4 0005 00f4    	dc.l	$07f40005,$00f40001,$07f80005,$07fc0005
+       0676:  0001 07f8 0005 
+       067c:  07fc 0005 
+   304 0680:                    
+   305 0680:                    	cnop	0,16
+   306 0680:                    mmuTable3:
+   307 0680:  0700 0001 0704    	dc.l	$07000001,$07040001,$07080001,$070c0001
+       0686:  0001 0708 0001 
+       068c:  070c 0001 
+   308 0690:  0710 0001 0714    	dc.l	$07100001,$07140001,$07180001,$071c0001
+       0696:  0001 0718 0001 
+       069c:  071c 0001 
+   309 06a0:  0720 0001 0724    	dc.l	$07200001,$07240001,$07280001,$072c0001
+       06a6:  0001 0728 0001 
+       06ac:  072c 0001 
+   310 06b0:  0730 0001 0734    	dc.l	$07300001,$07340001,$07380001,$073c0001
+       06b6:  0001 0738 0001 
+       06bc:  073c 0001 
+   311 06c0:  0740 0001 0744    	dc.l	$07400001,$07440001,$07480001,$074c0001
+       06c6:  0001 0748 0001 
+       06cc:  074c 0001 
+   312 06d0:  0750 0001 0754    	dc.l	$07500001,$07540001,$07580001,$075c0001
+       06d6:  0001 0758 0001 
+       06dc:  075c 0001 
+   313 06e0:  0760 0001 0764    	dc.l	$07600001,$07640001,$07680001,$076c0001
+       06e6:  0001 0768 0001 
+       06ec:  076c 0001 
+   314 06f0:  0770 0001 0774    	dc.l	$07700001,$07740001,$07780001,$077c0001
+       06f6:  0001 0778 0001 
+       06fc:  077c 0001 
+   315 0700:                    
+   316 0700:  0780 0001 0784    	dc.l	$07800001,$07840001,$07880001,$078c0001
+       0706:  0001 0788 0001 
+       070c:  078c 0001 
+   317 0710:  0790 0001 0794    	dc.l	$07900001,$07940001,$07980001,$079c0001
+       0716:  0001 0798 0001 
+       071c:  079c 0001 
+   318 0720:  07a0 0001 07a4    	dc.l	$07a00001,$07a40001,$07a80001,$07ac0001
+       0726:  0001 07a8 0001 
+       072c:  07ac 0001 
+   319 0730:  07b0 0001 07b4    	dc.l	$07b00001,$07b40001,$07b80001,$07bc0001
+       0736:  0001 07b8 0001 
+       073c:  07bc 0001 
+   320 0740:  07c0 0001 07c4    	dc.l	$07c00001,$07c40001,$07c80001,$07cc0001
+       0746:  0001 07c8 0001 
+       074c:  07cc 0001 
+   321 0750:  07d0 0001 07d4    	dc.l	$07d00001,$07d40001,$07d80001,$07dc0001
+       0756:  0001 07d8 0001 
+       075c:  07dc 0001 
+   322 0760:  07e0 0001 07e4    	dc.l	$07e00001,$07e40001,$07e80001,$07ec0001
+       0766:  0001 07e8 0001 
+       076c:  07ec 0001 
+   323 0770:  07f0 0001 07f4    	dc.l	$07f00001,$07f40001,$07f80001,$07fc0001
+       0776:  0001 07f8 0001 
+       077c:  07fc 0001 
+   324 0780:                    
+   325 0780:                    	cnop	0,16
+   326 0780:  0000 0670         mmuInitSize	equ	(*-mmuInit)
+   327 0780:                    
+   328 0780:                    	end

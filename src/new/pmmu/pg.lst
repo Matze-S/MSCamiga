@@ -1,0 +1,344 @@
+Aztec 68000 Assembler Version 5.0a  Jan  9 1990  8:04:37
+     1 0000:                    ;:ts=8
+     2 0000:                    ;
+     3 0000:                    ;#include <stdio.h>
+     4 0000:                    ;
+     5 0000:                    ;long tc;
+     6 0000:                    ;long crp[4] = { -1, -1, -1, -1};
+     7 0000:                    	dseg
+     8 0000:                    	ds	0
+     9 0000:                    	xdef	_crp
+    10 0000:                    _crp:
+    11 0000:  ffff ffff         	dc.l	$ffffffff
+    12 0004:  ffff ffff         	dc.l	$ffffffff
+    13 0008:  ffff ffff         	dc.l	$ffffffff
+    14 000c:  ffff ffff         	dc.l	$ffffffff
+    15 0010:                    	cseg
+    16 0000:                    ;long srp[4] = { -1, -1, -1, -1};
+    17 0000:                    	dseg
+    18 0010:                    	ds	0
+    19 0010:                    	xdef	_srp
+    20 0010:                    _srp:
+    21 0010:  ffff ffff         	dc.l	$ffffffff
+    22 0014:  ffff ffff         	dc.l	$ffffffff
+    23 0018:  ffff ffff         	dc.l	$ffffffff
+    24 001c:  ffff ffff         	dc.l	$ffffffff
+    25 0020:                    	cseg
+    26 0000:                    ;long drp[4] = { -1, -1, -1, -1};
+    27 0000:                    	dseg
+    28 0020:                    	ds	0
+    29 0020:                    	xdef	_drp
+    30 0020:                    _drp:
+    31 0020:  ffff ffff         	dc.l	$ffffffff
+    32 0024:  ffff ffff         	dc.l	$ffffffff
+    33 0028:  ffff ffff         	dc.l	$ffffffff
+    34 002c:  ffff ffff         	dc.l	$ffffffff
+    35 0030:                    	cseg
+    36 0000:                    ;
+    37 0000:                    ;void get_regs(void)
+    38 0000:                    ;{
+    39 0000:                    # 9 'pg.c' 409544331
+    40 0000:                    ^| .2
+    41 0000:                    	xdef	_get_regs
+    42 0000:                    _get_regs:
+    43 0000:  4e55 fff8         	link	a5,#.3
+    44 0004:  48e7 0000         	movem.l	.4,-(sp)
+    45 0008:                    ;   long *lp, l;
+    46 0008:                    ;
+    47 0008:                    ;#asm
+    48 0008:                    ;   mc68851
+    49 0008:                    ;   mc68881
+    50 0008:                    ;
+    51 0008:                    ;   move.l   a5,-(sp)
+    52 0008:                    ;   lea.l    1$,a5
+    53 0008:                    ;   move.l   _SysBase#,a6
+    54 0008:                    ;   jsr      _LVODisable#(a6)
+    55 0008:                    ;   jsr      _LVOSupervisor#(a6)
+    56 0008:                    ;   move.l   (sp)+,a5
+    57 0008:                    ;   bra      2$
+    58 0008:                    ;
+    59 0008:                    ;1$ lea.l    _tc,a0
+    60 0008:                    ;   pmove    tc,(a0)
+    61 0008:                    ;   lea.l    _crp,a0
+    62 0008:                    ;   pmove    crp,(a0)
+    63 0008:                    ;   lea.l    _srp,a0
+    64 0008:                    ;   pmove    srp,(a0)
+    65 0008:                    ;
+    66 0008:                    ;;    pmove    (a0),srp
+    67 0008:                    ;;    pmove    (a0),drp
+    68 0008:                    ;;    pmove    (a0),pcsr
+    69 0008:                    ;;    pmove    (a0),psr
+    70 0008:                    ;;    pmove    (a0),crp
+    71 0008:                    ;;    pmove    (a0),ac
+    72 0008:                    ;;    pmove    (a0),scc
+    73 0008:                    ;;    pmove    (a0),val
+    74 0008:                    ;;    pmove    (a0),cal
+    75 0008:                    ;;    pmove    (a0),tc
+    76 0008:                    ;;
+    77 0008:                    ;;    pmove    srp,(a0)
+    78 0008:                    ;;    pmove    drp,(a0)
+    79 0008:                    ;;    pmove    pcsr,(a0)
+    80 0008:                    ;;;   pmove     psr,(a0)
+    81 0008:                    ;;    pmove    crp,(a0)
+    82 0008:                    ;;    pmove    ac,(a0)
+    83 0008:                    ;;    pmove    scc,(a0)
+    84 0008:                    ;;    pmove    val,(a0)
+    85 0008:                    ;;    pmove    cal,(a0)
+    86 0008:                    ;;    pmove    tc
+    87 0008:                    ;;
+    88 0008:                    ;;    prestore (a0)+
+    89 0008:                    ;;
+    90 0008:                    ;;    pflusha
+    91 0008:                    ;;    pflushr  (a0)
+    92 0008:                    ;;    pflushs  crp,#4
+    93 0008:                    ;;    psave    -(a0)
+    94 0008:                    ;;    pflush    d0,#5
+    95 0008:                    ;;    ploadw    d0,(a0)
+    96 0008:                    ;;    ptestw    sfc,(a0),#4
+    97 0008:                    ;;    ploadr    d0,(a0)
+    98 0008:                    ;;    ptestr    sfc,(a0),#5
+    99 0008:                    ;
+   100 0008:                    ;   clr.l -(sp)
+   101 0008:                    ;   pmove (sp),tc
+   102 0008:                    ;   addq.w #4,sp
+   103 0008:                    ;
+   104 0008:                    ;   rte
+   105 0008:                    ;
+   106 0008:                    ;2$
+   107 0008:                    ;#endasm
+   108 0008:                       mc68851
+   109 0008:                       mc68881
+   110 0008:                    
+   111 0008:  2f0d                 move.l   a5,-(sp)
+   112 000a:  4bfa 0012            lea.l    1$,a5
+   113 000e:  2c6d xxxx            move.l   _SysBase#,a6
+   114 0012:  4eae xxxx            jsr      _LVODisable#(a6)
+   115 0016:  4eae xxxx            jsr      _LVOSupervisor#(a6)
+   116 001a:  2a5f                 move.l   (sp)+,a5
+   117 001c:  6022                 bra      2$
+   118 001e:                    
+   119 001e:  41fa xxxx         1$ lea.l    _tc,a0
+   120 0022:  f010 4200            pmove    tc,(a0)
+   121 0026:  41fa xxxx            lea.l    _crp,a0
+   122 002a:  f010 4e00            pmove    crp,(a0)
+   123 002e:  41fa xxxx            lea.l    _srp,a0
+   124 0032:  f010 4a00            pmove    srp,(a0)
+   125 0036:                    
+   126 0036:                    ;    pmove    (a0),srp
+   127 0036:                    ;    pmove    (a0),drp
+   128 0036:                    ;    pmove    (a0),pcsr
+   129 0036:                    ;    pmove    (a0),psr
+   130 0036:                    ;    pmove    (a0),crp
+   131 0036:                    ;    pmove    (a0),ac
+   132 0036:                    ;    pmove    (a0),scc
+   133 0036:                    ;    pmove    (a0),val
+   134 0036:                    ;    pmove    (a0),cal
+   135 0036:                    ;    pmove    (a0),tc
+   136 0036:                    ;
+   137 0036:                    ;    pmove    srp,(a0)
+   138 0036:                    ;    pmove    drp,(a0)
+   139 0036:                    ;    pmove    pcsr,(a0)
+   140 0036:                    ;;   pmove     psr,(a0)
+   141 0036:                    ;    pmove    crp,(a0)
+   142 0036:                    ;    pmove    ac,(a0)
+   143 0036:                    ;    pmove    scc,(a0)
+   144 0036:                    ;    pmove    val,(a0)
+   145 0036:                    ;    pmove    cal,(a0)
+   146 0036:                    ;    pmove    tc
+   147 0036:                    ;
+   148 0036:                    ;    prestore (a0)+
+   149 0036:                    ;
+   150 0036:                    ;    pflusha
+   151 0036:                    ;    pflushr  (a0)
+   152 0036:                    ;    pflushs  crp,#4
+   153 0036:                    ;    psave    -(a0)
+   154 0036:                    ;    pflush    d0,#5
+   155 0036:                    ;    ploadw    d0,(a0)
+   156 0036:                    ;    ptestw    sfc,(a0),#4
+   157 0036:                    ;    ploadr    d0,(a0)
+   158 0036:                    ;    ptestr    sfc,(a0),#5
+   159 0036:                    
+   160 0036:  42a7                 clr.l -(sp)
+   161 0038:  f017 4000            pmove (sp),tc
+   162 003c:  584f                 addq.w #4,sp
+   163 003e:                    
+   164 003e:  4e73                 rte
+   165 0040:                    
+   166 0040:                    2$
+   167 0040:                    ;
+   168 0040:                    ;   lp = (long *)crp[1];
+   169 0040:                    ~ lp -4 "*l"
+   170 0040:                    ~ l -8 "l"
+   171 0040:                    ^^^^^^^^^^^^^^^^^^^^
+   172 0040:                    ^^^^^^^^^^^^^^^^^^^^^
+   173 0040:                    ^^^^^^^^^^^^^^^^^^^^^
+   174 0040:  2b6d xxxx fffc    ^^^	move.l	_crp+4,-4(a5)
+   175 0046:                    ;   lp = (long *)(lp[7] & ~0xffL);
+   176 0046:  206d fffc         ^	move.l	-4(a5),a0
+   177 004a:  2028 001c         	move.l	28(a0),d0
+   178 004e:  0280 ffff ff00    	and.l	#-256,d0
+   179 0054:  2b40 fffc         	move.l	d0,-4(a5)
+   180 0058:                    ;   lp[0xf * 4 + 1] = lp[0xf * 4 + 1] & ~0xffL | 0xd;
+   181 0058:  206d fffc         ^	move.l	-4(a5),a0
+   182 005c:  2028 00f4         	move.l	244(a0),d0
+   183 0060:  0280 ffff ff00    	and.l	#-256,d0
+   184 0066:  0080 0000 000d    	or.l	#13,d0
+   185 006c:  206d fffc         	move.l	-4(a5),a0
+   186 0070:  2140 00f4         	move.l	d0,244(a0)
+   187 0074:                    ;   lp[0xf * 4] = lp[0xf * 4] & ~0xffL | 0xd;
+   188 0074:  206d fffc         ^	move.l	-4(a5),a0
+   189 0078:  2028 00f0         	move.l	240(a0),d0
+   190 007c:  0280 ffff ff00    	and.l	#-256,d0
+   191 0082:  0080 0000 000d    	or.l	#13,d0
+   192 0088:  206d fffc         	move.l	-4(a5),a0
+   193 008c:  2140 00f0         	move.l	d0,240(a0)
+   194 0090:                    ;   lp = (long *)crp[1];
+   195 0090:  2b6d xxxx fffc    ^	move.l	_crp+4,-4(a5)
+   196 0096:                    ;   lp = (long *)(lp[0] & ~0xffL);
+   197 0096:  206d fffc         ^	move.l	-4(a5),a0
+   198 009a:  2010              	move.l	(a0),d0
+   199 009c:  0280 ffff ff00    	and.l	#-256,d0
+   200 00a2:  2b40 fffc         	move.l	d0,-4(a5)
+   201 00a6:                    ;   lp[0xc * 4] = 0x7f00000L | 0x19;
+   202 00a6:  206d fffc         ^	move.l	-4(a5),a0
+   203 00aa:  217c 07f0 0019    	move.l	#133169177,192(a0)
+       00b0:  00c0 
+   204 00b2:                    ;   lp[0xc * 4 + 1] = 0x7f40000L | 0x19;
+   205 00b2:  206d fffc         ^	move.l	-4(a5),a0
+   206 00b6:  217c 07f4 0019    	move.l	#133431321,196(a0)
+       00bc:  00c4 
+   207 00be:                    ;
+   208 00be:                    ;#asm
+   209 00be:                    ;   move.l   a5,-(sp)
+   210 00be:                    ;   lea.l    3$,a5
+   211 00be:                    ;   move.l   _SysBase#,a6
+   212 00be:                    ;   jsr      _LVOSupervisor#(a6)
+   213 00be:                    ;   jsr      _LVOEnable#(a6)
+   214 00be:                    ;   move.l   (sp)+,a5
+   215 00be:                    ;   bra      4$
+   216 00be:                    ;
+   217 00be:                    ;3$ lea.l    _crp,a0
+   218 00be:                    ;   pmove    (a0),crp
+   219 00be:                    ;   rte
+   220 00be:                    ;
+   221 00be:                    ;4$
+   222 00be:                    ;#endasm
+   223 00be:  2f0d                 move.l   a5,-(sp)
+   224 00c0:  4bfa 0012            lea.l    3$,a5
+   225 00c4:  2c6d xxxx            move.l   _SysBase#,a6
+   226 00c8:  4eae xxxx            jsr      _LVOSupervisor#(a6)
+   227 00cc:  4eae xxxx            jsr      _LVOEnable#(a6)
+   228 00d0:  2a5f                 move.l   (sp)+,a5
+   229 00d2:  600a                 bra      4$
+   230 00d4:                    
+   231 00d4:  41fa xxxx         3$ lea.l    _crp,a0
+   232 00d8:  f010 4c00            pmove    (a0),crp
+   233 00dc:  4e73                 rte
+   234 00de:                    
+   235 00de:                    4$
+   236 00de:                    ;}
+   237 00de:                    ^^^^^^^^^^^^^^^^^.5
+   238 00de:  4cdf 0000         	movem.l	(sp)+,.4
+   239 00e2:  4e5d              	unlk	a5
+   240 00e4:  4e75              	rts
+   241 00e6:                    .2
+   242 00e6:  ffff fff8         .3	equ	-8
+   243 00e6:  0000              .4	reg	
+   244 00e6:                    ;
+   245 00e6:                    ;void main(int argc, char **argv)
+   246 00e6:                    ;{
+   247 00e6:                    # 101
+   248 00e6:                    ^| .6
+   249 00e6:                    	xdef	_main
+   250 00e6:                    _main:
+   251 00e6:  4e55 0000         	link	a5,#.7
+   252 00ea:  48e7 0000         	movem.l	.8,-(sp)
+   253 00ee:                    ;   get_regs();
+   254 00ee:                    ~~ argc 8 "l"
+   255 00ee:                    ~~ argv 12 "**c"
+   256 00ee:  4eba ff10         ^	jsr	_get_regs
+   257 00f2:                    ;
+   258 00f2:                    ;   printf("tc := %08lx\n", tc);
+   259 00f2:  2f2d xxxx         ^^	move.l	_tc,-(sp)
+   260 00f6:  487a 0054         	pea	.1+0
+   261 00fa:  4eba xxxx         	jsr	_printf
+   262 00fe:  504f              	add.w	#8,sp
+   263 0100:                    ;   printf("crp := %08lx %08lx\n", crp[0], crp[1]);
+   264 0100:  2f2d xxxx         ^	move.l	_crp+4,-(sp)
+   265 0104:  2f2d xxxx         	move.l	_crp,-(sp)
+   266 0108:  487a 004f         	pea	.1+13
+   267 010c:  4eba xxxx         	jsr	_printf
+   268 0110:  4fef 000c         	lea	12(sp),sp
+   269 0114:                    ;   printf("srp := %08lx %08lx\n", srp[0], srp[1]);
+   270 0114:  2f2d xxxx         ^	move.l	_srp+4,-(sp)
+   271 0118:  2f2d xxxx         	move.l	_srp,-(sp)
+   272 011c:  487a 004f         	pea	.1+33
+   273 0120:  4eba xxxx         	jsr	_printf
+   274 0124:  4fef 000c         	lea	12(sp),sp
+   275 0128:                    ;   printf("drp := %08lx %08lx\n", drp[0], drp[1]);
+   276 0128:  2f2d xxxx         ^	move.l	_drp+4,-(sp)
+   277 012c:  2f2d xxxx         	move.l	_drp,-(sp)
+   278 0130:  487a 004f         	pea	.1+53
+   279 0134:  4eba xxxx         	jsr	_printf
+   280 0138:  4fef 000c         	lea	12(sp),sp
+   281 013c:                    ;   exit(0);
+   282 013c:  42a7              ^	clr.l	-(sp)
+   283 013e:  4eba xxxx         	jsr	_exit
+   284 0142:  584f              	add.w	#4,sp
+   285 0144:                    ;}
+   286 0144:                    ^.9
+   287 0144:  4cdf 0000         	movem.l	(sp)+,.8
+   288 0148:  4e5d              	unlk	a5
+   289 014a:  4e75              	rts
+   290 014c:                    .6
+   291 014c:  0000 0000         .7	equ	0
+   292 014c:  0000              .8	reg	
+   293 014c:                    .1
+   294 014c:  7463 203a 3d20    	dc.b	116,99,32,58,61,32,37,48,56,108,120,10,0,99,114
+       0152:  2530 386c 780a 
+       0158:  0063 72
+   295 015b:  7020 3a3d 2025    	dc.b	112,32,58,61,32,37,48,56,108,120,32,37,48,56,108
+       0161:  3038 6c78 2025 
+       0167:  3038 6c
+   296 016a:  780a 0073 7270    	dc.b	120,10,0,115,114,112,32,58,61,32,37,48,56,108,120
+       0170:  203a 3d20 2530 
+       0176:  386c 78
+   297 0179:  2025 3038 6c78    	dc.b	32,37,48,56,108,120,10,0,100,114,112,32,58,61,32
+       017f:  0a00 6472 7020 
+       0185:  3a3d 20
+   298 0188:  2530 386c 7820    	dc.b	37,48,56,108,120,32,37,48,56,108,120,10,0
+       018e:  2530 386c 780a 
+       0194:  00
+   299 0196:                    	ds	0
+   300 0196:                    ;
+   301 0196:                    ;
+   302 0196:                    # 111
+   303 0196:                    |
+   304 0196:                    ~ _exit * "(l"
+   305 0196:                    ~ _main * "(v"
+   306 0196:                    ~ _get_regs * "(v"
+   307 0196:                    ~ _drp * "[4l"
+   308 0196:                    ~ _srp * "[4l"
+   309 0196:                    ~ _crp * "[4l"
+   310 0196:                    ~ _tc * "l"
+   311 0196:                    ~ '__stdio'
+   312 0196:                    ~ 1 8 22
+   313 0196:                    ~ _bp 0 "*C"
+   314 0196:                    ~ _bend 4 "*C"
+   315 0196:                    ~ _buff 8 "*C"
+   316 0196:                    ~ _flags 12 "I"
+   317 0196:                    ~ _unit 14 "c"
+   318 0196:                    ~ _bytbuf 15 "C"
+   319 0196:                    ~ _buflen 16 "L"
+   320 0196:                    ~ _tmpnum 20 "I"
+   321 0196:                    ~ _printf * "(l"
+   322 0196:                    ~ FILE ":" 1
+   323 0196:                    ~ fpos_t "l"
+   324 0196:                    ~ size_t "L"
+   325 0196:                    ~ va_list "*c"
+   326 0196:                    	xref	_exit
+   327 0196:                    	xref	_printf
+   328 0196:                    	xref	.begin
+   329 0196:                    	dseg
+   330 0030:                    	global	_tc,4
+   331 0030:                    	end

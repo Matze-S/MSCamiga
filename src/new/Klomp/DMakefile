@@ -1,0 +1,11 @@
+SRCS=toolmanager.c toollist.c window.c data.c
+OBJS=$(SRCS:"*.c":"*.o")
+
+ToolManager : $(OBJS)
+         dcc -o %(left) %(right)
+
+$(OBJS) : $(SRCS)
+         dcc -o %(left) -c %(right)
+
+$(SRCS) : ToolManager.h
+         SetDate %(left)

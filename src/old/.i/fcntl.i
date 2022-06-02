@@ -1,0 +1,29 @@
+; Copyright (C) 1989 by Matthias Schmidt
+
+	IFND	FCNTL_I
+FCNTL_I SET	1
+	IFND	EXEC_TYPES_I
+	INCLUDE "exec/types.i"
+	ENDC	!EXEC_TYPES_I
+
+O_RDONLY	EQU	0
+O_WRONLY	EQU	1
+O_RDWR		EQU	2
+O_CREAT 	EQU	$0100
+O_TRUNC 	EQU	$0200
+O_EXCL		EQU	$0400
+O_APPEND	EQU	$0800
+
+O_CONRAW	EQU	$4000
+O_STDIO 	EQU	$8000
+
+	STRUCTURE _dev,0
+	LONG	_dev_fd
+	WORD	_dev_mode
+	LABEL	_dev_SIZEOF
+
+	public	__devtab
+	public	__numdev
+
+	ENDC	!FCNTL_I
+

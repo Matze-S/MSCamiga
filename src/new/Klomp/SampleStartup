@@ -1,0 +1,320 @@
+                           Sample Startup
+                           ==============
+
+This file describes a way for 68020/MMU, 68030, or autoconfig RAM
+board owners to set up their harddisk system so that they can
+choose to boot into either 2.0 or their normal 1.3 environment.
+
+This sample startup uses "Kickit".  GVP accelerator + harddisk owners
+must use MmuKick instead, with a special $F00000 Kickfile from CATS,
+and special PALs from GVP.  Contact CATS Admin (215-431-9180) if you
+need the special $F00000 kickfile; contact GVP about the PALs.
+
+Users without harddisks should be able to modify the Boot Partition
+startup to work off diskettes by referencing floppy volume names rather
+than harddisk partitions and directories.
+
+
+Part I describes a minimal boot floppy and floppy startup for 2090 owners.
+This minimal boot floppy is just enough get you to the dh0: "boot"
+partition and call its s/startup-sequence as if you had started there.
+(SCSI owners - change the dh0:'s to dh2:'s)
+
+Part II describes a minimal boot partition and startup to let you choose
+between your normal 1.3 environment OR 2.0 when you reboot.
+
+WARNING - Please BACK UP your hard disk and floppies, and read the
+          KnownBugs files before testing any pre-release version of
+          the operating system.
+
+
+NOTE - Partition mounting under 2.0 requires that you provide a
+       modified mountlist.  The sample startup references your old 1.3
+       mountlist as devs:mountlist1.3, and your modified mountlist
+       as devs:mountlist2.0.  In the modified mountlist, the FileSystem
+       lines for your FFS partitions must be deleted or 
+       commented out C-style like this:
+             /*  FileSystem = l:FastFileSystem */
+       AND the DosType for all FFS and old-FS entries must be correct:
+             DosType = 0x444F5301        (for FFS)
+         or  DosType = 0x444F5300        (for old-FS)
+
+
+
+------------------------------------------------------------------------
+               Part I - Minimal Boot Floppy for 2090 Owners
+
+A. Minimal Contents of Boot Floppy 
+   ===============================
+
+     NOTE: You should use 1.3 files/commands on your boot disk or
+           partition, but future revisions of 2.0 may require 
+           some 2.0 files when booting.  SetPatch, FastMemFirst, 
+           FastFileSystem, and Disk-Validator are not found on
+           (and not used by) Workbench 2.0.
+
+; NOTE - Copy the 2.0 Workbench system-configuration here to get the
+; proper 2.0 colors.  Whenever you change "classic" preferences within
+; 2.0 (colors, printer, etc.), copy the 2.0 devs:system-configuration
+; to this boot floppy.
+
+     c (dir)
+       Assign                           Binddrivers
+       CD                               Echo
+       EndIf                            If
+       SetPatch                         version
+     System (dir)
+       FastMemFirst                     
+     L (dir)
+       disk-validator                   RAM-Handler
+     devs (dir)
+       system-configuration             
+     s (dir)
+       startup-sequence                 
+     Libs (dir)
+       icon.library                     
+     Expansion (dir)
+       HdDisk                           HdDisk.info
+
+
+B. Startup-Sequence for Boot Floppy
+   ================================
+
+cd c:
+version >NIL: graphics.library 36
+IF WARN
+   SetPatch >NIL: r ;patch system functions
+   Sys:System/FastMemFirst >NIL:; move C00000 memory to last in list
+ENDIF
+
+BindDrivers
+
+assign t: ram:
+
+;=== NOTE - SCSI owners change dh0's below to dh2's
+assign >NIL: dh0: exists
+if not warn
+   assign sys:  dh0:
+   assign c:    dh0:c
+   assign s:    dh0:s
+   assign l:    dh0:l
+   assign devs: dh0:devs
+   cd sys:
+   execute s:startup-sequence
+endif
+
+
+
+------------------------------------------------------------------------
+                Part II - Minimal 1.3/2.0 Boot Partition
+
+A. Minimal Contents of Boot Partition (Use 1.3 files where available)
+   ==================================
+
+     NOTE: You should use 1.3 files/commands to get to your 2.0 Workbench
+           partition or directory, but future revisions of 2.0 may require 
+           some 2.0 files when booting.  SetPatch, FastMemFirst, 
+           FastFileSystem, and Disk-Validator are not found on
+           (and not used by) Workbench 2.0.  Copy the 2.0 Workbench
+	   system-configuration here to get the proper 2.0 colors.
+           Whenever you change "classic" preferences within 2.0 (colors,
+           printer, etc.), copy the 2.0 devs:system-configuration
+           to this boot partition (or to your boot floppy if your hard
+           disk is not an autoboot drive).
+
+     c (dir)
+       ask                              assign
+       Echo                             else
+       endif                            execute
+       if                               Kickit
+       Mount                            setcpu
+       SetPatch                         version
+     system (dir)
+       FastMemFirst                     
+     l (dir)
+       Disk-Validator                   FastFileSystem
+     devs (dir)
+       mountlist1.3                     mountlist2.0
+       [ramdrive.device]                system-configuration [if autoboot]
+     s (dir)
+       startup-sequence
+  kick.143.20
+      (^^^ version# between the .'s may vary; final .20 means for $200000)
+
+           Optional RAD directory (same as minimal boot floppy)
+                 (This RAD just fits LoCyl=0 to HiCyl=6)
+           ====================================================
+
+     c (dir)
+       Assign                           Binddrivers
+       CD                               Echo
+       EndIf                            If
+       SetPatch                         version
+     System (dir)
+       FastMemFirst                     
+     L (dir)
+       disk-validator                   RAM-Handler
+     devs (dir)
+       system-configuration             
+     s (dir)
+       startup-sequence                 
+     Libs (dir)
+       icon.library                     
+     Expansion (dir)
+       HdDisk                           HdDisk.info
+
+
+B. Startup-Sequence for Boot Partition
+   ===================================
+
+   NOTE! Please read through all of the comments in this startup.
+         The comments point out the lines and areas you must
+         change depending on your configuration.
+
+         
+; Sample harddisk startup-sequence to boot into either 1.3 or 2.0.
+;
+; NOTES:
+;
+; Non-autoboot (2090) users will also need the minimal boot disk
+; described earlier, and can comment out the SetPatch and FastMemFirst
+; lines in this script (They will be done by the boot disk startup).
+;
+; The system in this example is set up as follows:
+;
+;   Small initial normal-FS "boot" partition (SYS:, becoming INIT:)
+;    containing KickIt and the specially linked Kick.[version].20 file.
+;    If you do not have room in INIT: for the Kick file, you can
+;    mount another partition to load it from.
+;
+;   The INIT: partition is either directly booted (autoboot) or quickly put
+;    in control by minimal boot disk described above (non-autoboot).
+;
+;   This example system also contains:
+;   1.3 FFS Workbench partition called WB3: (mounted for 1.3)
+;   2.0 FFS Workbench partition called WB4: (mounted for 2.0)
+;   FFS user work partition called FH0: (mounted for both 1.3 and 2.0)
+;
+; Alternately, you could just store each Workbench in its own directory,
+; rather than in separate partitions.
+;
+; IMPORTANT:  During the post-soft-kick startup sequence, you should
+;    not echo or output any information to the console until AFTER
+;    the Workbench 2.0 startup completes its IPrefs initialization.
+;    Console output will cause the initial shell window to open
+;    and this should not be done until after IPrefs configuration
+;    of the Workbench screen.
+
+
+; THE SCRIPT
+
+ ;=== Convenient label for referencing this boot partition
+assign INIT: SYS:
+
+ ;=== Are we running 1.3 or 2.0 Kickstart ?
+version >NIL: graphics.library 36
+IF WARN
+    ;=== Currently running 1.3. Boot into 2.0 unless stopped.
+   failat 21
+   echo "CTRL-C NOW to boot into 1.3 instead of 2.0"
+   wait 3
+   IF NOT WARN
+       ;=== You want 2.0
+       ;=== If necessary, change the kick file name to reflect current
+       ;=== version, and if you have it stored on a different partition,
+       ;=== first mount that partition with your 1.3 mountlist 
+       KICKIT INIT:kick.143.20
+       ;===  (Your Amiga now reboots)
+       ;=== 
+       ;=== If you get here, kickit failed or was aborted
+       Quit
+   ELSE
+       ;=== You want 1.3
+       ;=== Comment out this SetPatch and FastMemFirst if you are a 2090
+       ;=== owner booting from the minimal boot disk (boot disk does them).
+      SetPatch >NIL: r
+      Sys:System/FastMemFirst >NIL:
+       ;=== If you need to mount partitions, mount using 1.3 mountlist
+      mount  FH0: from devs:mountlist1.3
+      mount  WB3: from devs:mountlist1.3
+       ;=== Assign SYS: to your Workbench 1.3 disk, partition, dir, etc.
+      assign SYS: WB3:
+   ENDIF
+ELSE
+    ;=== Currently running 2.0
+    ;=== If you need to mount partitions, mount a copy of your mountlist
+    ;=== which you have modified for 2.0 (here called mountlist2.0) !!!
+    ;=== FFS entries in your 2.0 mountlist should have their Filesystem
+    ;=== lines deleted or commented out, and ALL partitions 
+    ;=== being mounted must have their correct DosType listed.
+    ;=== (DosType = 0x444F5301 (FFS),  DosType = 0x444F5300 (normalFS))
+   mount  FH0: from devs:mountlist2.0
+   mount  WB4: from devs:mountlist2.0
+    ;=== Assign SYS: to your Workbench 2.0 disk, partition, dir, etc.
+   assign SYS: WB4:
+endif
+
+
+ ;=== Assign all system directories to the selected Workbench (1.3 or 2.0)
+assign c: sys:c
+assign s: sys:s
+assign l: sys:l
+assign fonts: sys:fonts
+assign devs: sys:devs
+assign libs: sys:libs
+
+ ;=== Set any assignments and paths you want for both 1.3 and 2.0
+ ;=== (my examples shown in following comments)
+; assign H: FH0:
+; assign INCLUDE: h:Include2.0
+; path H:DevTools H:PdTools H:s add
+
+ ;=== Temporarily assign T: to RAM: for temporary scripts
+ ;=== (Don't makedir ram:T or subsequent makedir ram:T in startups will fail)
+assign T: RAM:
+ ;=== Can get rid of the INIT: assign
+assign INIT:
+ ;=== CD where you want to be
+cd ram:
+
+ ;=== Now, enter either 2.0 Workbench, or your normal 1.3 environment
+ ;===
+ ;=== Are we running 1.3 or 2.0 Kickstart ?
+version >NIL: graphics.library 36
+IF NOT WARN
+    ;=== We are running 2.0
+    ;=== For 2.0, just go to the 2.0 startup-sequence
+   EXECUTE SYS:s/startup-sequence
+ELSE
+    ;=== We are running 1.3
+    ;=== Here execute or insert the rest of your normal 1.3 startup,  
+    ;=== minus the volume mounting and system directory assignments
+    ;=== (SYS:, c:, etc) which were done earlier in this script.
+    ;=== This simple example just calls the 1.3 SYS:s/startup-sequence.
+    ;=== You may have additional assigns, background tools, paths, etc.
+    ;=== Keep any tools or initializations that could interfere with
+    ;=== 2.0 testing either here or within your 1.3 startup sequence.
+
+    ;=== 2090 owners may want to create a RAD: for normal rebooting. 
+    ;=== Here, the dir INIT:RAD (a copy of the minimal boot disk's contents)
+    ;=== is copied to a RAD.  Just uncomment if you want this feature.
+    ;=== This RAD will just fit in locyl=0 to hicyl=5.
+    ;=== Note that RAD will not survive a rekick.
+;
+;   assign >NIL: RAD: exists
+;   if warn
+;      echo "Mounting RAD:... " NOLINE
+;      mount RAD: from INIT:devs/mountlist1.3
+;      if not exists RAD:c
+;         echo "setting up... " NOLINE
+;         relabel drive RAD: name RamDrive
+;         copy INIT:RAD RAD: all quiet
+;      endif
+;      echo "Done"
+;    endif
+
+
+   EXECUTE SYS:s/startup-sequence
+ENDIF
+
+

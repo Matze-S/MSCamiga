@@ -1,0 +1,9 @@
+cc createkickbonus.c
+ln createkickbonus.o -lc
+cc createkickstart.c
+ln createkickstart.o -lc
+as initkick.asm -cdn
+ln initkick.o
+cc readkick2.0.c
+ln readkick2.0.o -lc
+

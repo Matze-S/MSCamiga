@@ -1,0 +1,3 @@
+cc find.c -m1cd -a -o find.asm -qv -bs
+as find.asm -cdnv
+ln find.o +Ccdb -gwlcl

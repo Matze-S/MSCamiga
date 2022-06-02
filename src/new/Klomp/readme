@@ -1,0 +1,25 @@
+Here some Workbench 2.0 "Stuff"...
+
+MapIcon:
+ This will remap the white and black pens to conform with the new V2.0
+standard.  This does not mean I agree that CBM should have changed the
+arrangement of the perfectly fine order of the white and black pens.
+But this should make things look better anyway...  If the icons are not
+4 color icons, they will be after running MapIcon.  Also, only names
+that have the ".info" extension will work with MapIcon.  To create a
+script file, use...
+
+ List >RAM:Map [DRIVE] all lformat "MapIcon >NIL: *"%s%s*""
+
+This will map all the icons in a drive.  Type "failat 30" before running
+the script.  Edit the file if you wish to remove icons that should not
+be mapped (such as the preferences drawer).
+
+Be sure NOT to use this file on copy protected disks as it may trash the
+copy protection scheme (these disk must look ugly on the Workbench, that's
+the way CBM wants it!).
+
+ClkPointer:
+ This little hack makes the Workbench's Wait-Clock's Hand spin.  It works
+as of workbench.library version 36.2062.  It may not work with future
+versions of the Workbench... That's what hacks are for!

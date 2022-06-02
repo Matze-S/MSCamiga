@@ -1,0 +1,29 @@
+Aztec 68000 Assembler 5.0d  Sep 12 1990
+     1 0000:                    
+     2 0000:  07ff f000         oldstart    equ   $7fff000
+     3 0000:  07ff f700         realstart   equ   $7fff700
+     4 0000:                    
+     5 0000:                       far   code
+     6 0000:                       far   data
+     7 0000:                       cseg
+     8 0000:                    
+     9 0000:  23f9 07ff f008       move.l   (oldstart+8),(realstart+8)
+       0006:  07ff f708 
+    10 000a:  4eb9 07ff f70c       jsr      (realstart+12)
+    11 0010:  23fa 0018 07ff       move.l   _8(pc),(realstart+8)
+       0016:  f708 
+    12 0018:  23fa 0014 07ff       move.l   _12(pc),(realstart+12)
+       001e:  f70c 
+    13 0020:  23fa 0010 07ff       move.l   _16(pc),(realstart+16)
+       0026:  f710 
+    14 0028:  4e75                 rts
+    15 002a:                    
+    16 002a:  6163 6365         _8    dc.l  $61636365
+    17 002e:  7373 696e         _12   dc.l  $7373696e
+    18 0032:  6720 2573         _16   dc.l  $67202573
+    19 0036:                    
+    20 0036:                    ;
+    21 0036:                    ;
+    22 0036:                    
+    23 0036:  4ef9 07ff ffc0       jmp   $7ffffc0
+    24 003c:                    

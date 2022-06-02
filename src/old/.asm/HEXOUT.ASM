@@ -1,0 +1,33 @@
+*---------------------------------------------------------------------------*
+HEXOUT	MOVEQ.L #7,D1
+	LEA.L HEXOUTBUFFER(PC),A0
+HEXOUTLOOP	ROL.L #4,D0
+	MOVE.L D0,D2
+	AND.B #$0f,D2
+	CMP.B #9,D2
+	BLS.S HEXOUTOK
+	ADDQ.B #7,D2
+HEXOUTOK	ADD.B #'0',D2
+	MOVE.B D2,(A0)+
+	DBF d1,HEXOUTLOOP
+	MOVE.L 4,A6
+	LEA.L HEXOUTNAME,A1
+	MOVEQ.L #0,D0
+	JSR -552(A6)
+	MOVE.L d0,A6
+	JSR -60(A6)
+	LEA.L HEXOUTTEXT(PC),A0
+	MOVE.L d0,D1
+	MOVE.L A0,D2
+	MOVEQ.L #HEXOUTLENGTH,D3
+	JSR -48(A6)
+	MOVE.L a6,A1
+	MOVE.L 4,A6
+	JMP -414(A6)
+HEXOUTNAME	DC.B "dos.Library",0
+HEXOUTTEXT	DC.B $0A," D0 -> $"
+HEXOUTBUFFER	DC.B "76543210"
+HEXOUTLENGTH	EQU *-HEXOUTTEXT
+	EVEN
+*---------------------------------------------------------------------------*
+

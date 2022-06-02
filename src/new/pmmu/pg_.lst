@@ -1,0 +1,19 @@
+Aztec 68000 Assembler Version 5.0a  Jan  9 1990  8:04:37
+     1 0000:                    
+     2 0000:                       mc68851
+     3 0000:                       machine mc68020
+     4 0000:                       cseg
+     5 0000:                    
+     6 0000:                       public _get_tc
+     7 0000:                    _get_tc:
+     8 0000:  48e7 0006            movem.l  a5-a6,-(sp)
+     9 0004:  4bfa 0008            lea.l    1$,a5
+    10 0008:  2c78 0004            move.l   (4).w,a6
+    11 000c:  6006                 bra      2$
+    12 000e:                    1$
+    13 000e:  f000 4200            pmove.l  tc,d0
+    14 0012:  4e73                 rte
+    15 0014:                    2$
+    16 0014:  4cdf 6000            movem.l  (sp)+,a5-a6
+    17 0018:  4e75                 rts
+    18 001a:                    

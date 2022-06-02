@@ -1,0 +1,62 @@
+
+				 CPU
+
+USAGE:
+    CPU [options]
+
+OPTIONS:
+    Cache, Burst, NoCache, NoBurst, InstCache, InstBurst,  DataCache
+    DataBurst, NoInstCache,  NoInstBurst,  NoDataCache,  NoDataBurst
+    FastROM,    Check  [68010,68020,68030,68881,68882,68851,MMU,FPU]
+    Trap
+
+PURPOSE:
+    To set/clear the CPU caches,  check for a  particular processor,
+    load the  ROM image into fast  32-bit  memory or set an  illegal
+    memory access handler which  will  output  information  out  the
+    serial port at 9600 baud if a task accesses page zero (lower 256
+    bytes) or memory above 16M.
+
+SPECIFICATION:
+    The CPU  command  will  alter  the  CACR  register  through  the
+    CacheControl()  Exec  call,  copy  the ROM image into 32-bit RAM
+    and  translate  the  ROM  memory  accesses through the  MMU,  or
+    invalidate  page zero and memory above  16M,  and  write-protect
+    the ROM area.  If mutually  exclusive options are selected,  the
+    least destructive is chosen.
+
+EXAMPLES:
+    1> CPU
+    System: 68030 68881 (INST: NoCache Burst) (DATA: Cache NoBurst)
+
+    1> CPU Burst Cache Check MMU
+    System: 68030 68881 (INST: Cache Burst) (DATA: Cache Burst)
+
+    1> CPU NoBurst DataCache NoInstCache
+    System: 68030 68881 (INST: NoCache NoBurst) (DATA: Cache NoBurst)
+
+    1> CPU Burst Cache FastROM
+    System: 68030 68881 FastROM (INST: Cache Burst) (DATA: Cache Burst)
+
+    1> CPU nofastrom nodatacache
+    System: 68030 68881 (INST: Cache Burst) (DATA: NoCache Burst)
+
+      In order to turn the TRAP mode on, first install a bus error
+      exception handler, then type CPU TRAP:
+
+        1> run cputrap
+        Trap handler installed
+        1> CPU trap
+        System: 68030 68881 Trap (INST: Cache Burst) (DATA: NoCache Burst)
+
+      In order to remove an exception handler, first turn TRAP mode
+      off, then execute TrapZero again:
+
+        1> CPU NoTrap
+        System: 68030 68881 (INST: Cache Burst) (DATA: NoCache Burst)
+        1> cputrap
+        Trap handler removed
+
+      Now you are ready to load another exception handler. The TRAP
+      and FastROM options are mutually exclusive.
+

@@ -1,0 +1,125 @@
+Aztec 68000 Assembler Version 5.0a  Jan  9 1990  8:04:37
+     1 0000:                    
+     2 0000:  ffff ffe2         _LVOSupervisor equ   -$1e
+     3 0000:  ffff ff88         _LVODisable    equ   -$78
+     4 0000:  ffff ff82         _LVOEnable     equ   -$7e
+     5 0000:  ffff ff3a         _LVOAllocMem   equ   -$c6
+     6 0000:  0000 0004         _AbsExecBase   equ   $4
+     7 0000:                    
+     8 0000:                       far      code
+     9 0000:                       far      data
+    10 0000:                       machine  mc68010
+    11 0000:                       cseg
+    12 0000:                    
+    13 0000:                    init:
+    14 0000:  48e7 2034            movem.l  d2/a2-a3/a5,-(sp)
+    15 0004:  740a                 moveq.l  #10,d2
+    16 0006:  2c78 0004            move.l   (_AbsExecBase).w,a6
+    17 000a:  203c 0000 04be       move.l   #(codeEnd-code+$400),d0
+    18 0010:  7201                 moveq.l  #1,d1
+    19 0012:  4eae ff3a            jsr      _LVOAllocMem(a6)
+    20 0016:  4a80                 tst.l    d0
+    21 0018:  675a                 beq.s    8$
+    22 001a:  2440                 move.l   d0,a2
+    23 001c:  4eae ff88            jsr      _LVODisable(a6)
+    24 0020:  224a                 move.l   a2,a1
+    25 0022:  700f                 moveq.l  #15,d0
+    26 0024:  47ea 0400            lea.l    $400(a2),a3
+    27 0028:  22cb              1$ move.l    a3,(a1)+
+    28 002a:  51c8 fffc            dbf       d0,1$
+    29 002e:  41f8 0040            lea.l    ($40).w,a0
+    30 0032:  7007                 moveq.l  #7,d0
+    31 0034:  22d8              2$ move.l    (a0)+,(a1)+
+    32 0036:  51c8 fffc            dbf       d0,2$
+    33 003a:  7017                 moveq.l  #23,d0
+    34 003c:  22cb              3$ move.l    a3,(a1)+
+    35 003e:  51c8 fffc            dbf       d0,3$
+    36 0042:  41f8 00c0            lea.l    ($c0).w,a0
+    37 0046:  303c 00cf            move.w    #$cf,d0
+    38 004a:  22d8              4$ move.l    (a0)+,(a1)+
+    39 004c:  51c8 fffc            dbf       d0,4$
+    40 0050:  303c 005e            move.w    #((codeEnd-code)/2-1),d0
+    41 0054:  41fa 0026            lea.l    code(pc),a0
+    42 0058:  32d8              5$ move.w    (a0)+,(a1)+
+    43 005a:  51c8 fffc            dbf       d0,5$
+    44 005e:  4bfa 0008            lea.l    6$,a5
+    45 0062:  4eae ffe2            jsr      _LVOSupervisor(a6)
+    46 0066:  6006                 bra.s    7$
+    47 0068:  4e7b a801         6$ movec.l  a2,vbr
+    48 006c:  4e73                 rte
+    49 006e:  4eae ff82         7$ jsr      _LVOEnable(a6)
+    50 0072:  7400                 moveq.l  #0,d2
+    51 0074:  2002              8$ move.l   d2,d0
+    52 0076:  4cdf 2c04            movem.l  (sp)+,d2/a2-a3/a5
+    53 007a:  4e75                 rts
+    54 007c:                    
+    55 007c:                    code:
+    56 007c:  594f                 subq.w   #4,sp
+    57 007e:  40e7                 move.w   sr,-(sp)
+    58 0080:  48e7 8080            movem.l  d0/a0,-(sp)
+    59 0084:  6100 0094            bsr      blink
+    60 0088:  302f 0014            move.w   20(sp),d0
+    61 008c:  0240 0fff            and.w    #$fff,d0
+    62 0090:  0c40 0020            cmp.w    #$20,d0
+    63 0094:  6710                 beq.s    1$
+    64 0096:                    6$
+    65 0096:  91c8                 sub.l    a0,a0
+    66 0098:  2f70 0000 000a       move.l   0(a0,d0.w),10(sp)
+    67 009e:  4cdf 0101            movem.l  (sp)+,d0/a0
+    68 00a2:  46df                 move.w   (sp)+,sr
+    69 00a4:  4e75                 rts
+    70 00a6:  206f 0010         1$ move.l   16(sp),a0
+    71 00aa:  3010                 move.w   (a0),d0
+    72 00ac:  0240 ffc0            and.w    #$ffc0,d0
+    73 00b0:  0c40 40c0            cmp.w    #$40c0,d0
+    74 00b4:  670a                 beq.s    7$
+    75 00b6:  302f 0014            move.w   20(sp),d0
+    76 00ba:  0240 0fff            and.w    #$fff,d0
+    77 00be:  60d6                 bra.s    6$
+    78 00c0:  3010              7$ move.w   (a0),d0
+    79 00c2:  e648                 lsr.w    #3,d0
+    80 00c4:  0240 0007            and.w    #7,d0
+    81 00c8:  0c40 0005            cmp.w    #5,d0
+    82 00cc:  6414                 bcc.s    2$
+    83 00ce:  3018                 move.w   (a0)+,d0
+    84 00d0:  2f48 0010            move.l   a0,16(sp)
+    85 00d4:  41fa 003c            lea.l    5$(pc),a0
+    86 00d8:  30c0                 move.w   d0,(a0)+
+    87 00da:  20bc 4e71 4e71       move.l   #$4e714e71,(a0)
+    88 00e0:  6028                 bra.s    4$
+    89 00e2:  0c40 000f         2$ cmp.w    #15,d0
+    90 00e6:  6412                 bcc.s    3$
+    91 00e8:  2018                 move.l   (a0)+,d0
+    92 00ea:  2f48 0010            move.l   a0,16(sp)
+    93 00ee:  41fa 0022            lea.l    5$(pc),a0
+    94 00f2:  20c0                 move.l   d0,(a0)+
+    95 00f4:  30bc 4e71            move.w   #$4e71,(a0)
+    96 00f8:  6010                 bra.s    4$
+    97 00fa:  3f10              3$ move.w   (a0),-(sp)
+    98 00fc:  2018                 move.l   (a0)+,d0
+    99 00fe:  2f48 0012            move.l   a0,18(sp)
+   100 0102:  41fa 000e            lea.l    5$(pc),a0
+   101 0106:  305f                 move.w   (sp)+,a0
+   102 0108:  20c0                 move.l   d0,(a0)+
+   103 010a:  4cdf 0101         4$ movem.l  (sp)+,d0/a0
+   104 010e:  46df                 move.w   (sp)+,sr
+   105 0110:  584f                 addq.w   #4,sp
+   106 0112:  4e71              5$ nop
+   107 0114:  4e71                 nop
+   108 0116:  4e71                 nop
+   109 0118:  4e73                 rte
+   110 011a:                    
+   111 011a:                    blink:
+   112 011a:  42e7                 move.w   ccr,-(sp)
+   113 011c:  48e7 c000            movem.l  d0-d1,-(sp)
+   114 0120:  7002                 moveq.l  #2,d0
+   115 0122:  72ff                 moveq.l  #-1,d1
+   116 0124:  33c1 00df f180    1$ move.w   d1,$dff180
+   117 012a:  51c9 fff8            dbf      d1,1$
+   118 012e:  51c8 fff4            dbf      d0,1$
+   119 0132:  4cdf 0003            movem.l  (sp)+,d0-d1
+   120 0136:  44df                 move.w   (sp)+,ccr
+   121 0138:  4e75                 rts
+   122 013a:                    
+   123 013a:                    codeEnd:
+   124 013a:                       end

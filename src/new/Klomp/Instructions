@@ -1,0 +1,124 @@
+
+
+
+Dear Amiga 2.0 Developer,
+
+
+     Enclosed is the developer Kickfile disk for the 2.01 release.  It
+contains kickfile kick.143.20 (Kickstart version 36.143 for the A2000).
+This release is an update to kickstart only and is designed to be used
+with the 2.0 Workbench and Extras disks.
+
+     The above disks and the KickIt command allow most developers to install
+2.0 on Amigas other than the A3000 and soft-kick into 2.0 using the KickIt
+command.  Developers who have purchased A3000's will receive the A3000
+release software installation disks under separate cover.
+
+
+
+   Instructions for installing 2.0 follow.
+
+
+
+				Instructions
+                       		============
+
+*****	This Release consists of the following software:
+  	  - Kickfile disk containing 512K 2.01 Kick.[version].20 file
+	  - Workbench 2.0
+	  - Extras 2.0
+
+
+*****	Where to find some important commands and files:
+
+	- BugReport	   In ReportForms file on Kickfile disk
+	- CompatReport     In ReportForms file on KickFile disk
+	- CPU		   Workbench/c directory (cpu.doc in Kickfile/tools)
+	- KickIt	   Tools directory of Kickfile disk
+	- Kick.[vers].20   In the root of the Kickfile disk
+	- SampleStartup    Kickfile disk
+
+*****	How to boot 2.0
+
+        In order to use the new 2.0 Workbench, you must "soft-kick"
+the 2.0 operating system "kick.[version].20" using the new "Kickit"
+command (both found on the Kickfile disk).  Owners of GVP accelerator
+plus harddisk cards will need to get special PALs from GVP, and get
+a special $F00000 kickfile from CATS for use with the mmu soft-kick
+program (Mmukick).  If you need the special MMUKICK disk, call
+CATS Administration at 215-431-9180 to have it mailed to you.
+
+    NOTE - You should always back up your harddisk and work disks
+           before installing new operating system software.
+
+***** Easy Ways To Try 2.0
+
+The simplest setup for trying 2.0 is ANY MODEL Amiga whose first or
+only autoconfig expansion card is RAM.
+
+Some simple setups include an A2000 or A1000 with a 2-meg RAM expansion.
+
+The new KickIt command allows you to "soft-kick" a special 2.0
+operating system file so that you can use the 2.0 Workbench disk.
+
+The easy no-installation way to boot 2.0 on a simple setup is as follows:
+---------------------------------------------------------------------------
+
+1. Boot normally with 1.3 and open a shell or CLI
+
+2. Insert the Kickfile disk in df0: and type:
+       df0:Tools/kickit df0:kick.38n.20
+       (kickit will read the kick.38n.20 file and reboot your machine)
+
+3. When the 2.0 Workbench disk prompt appears, insert the 2.0 Workbench disk.
+
+    NOTE - If you have an autoboot harddisk, pull the Kickfile disk
+      during the KickIt reboot, and insert the 2.0 Workbench disk to
+      boot the 2.0 Workbench.  See the SampleStartup file on the Kickfile 
+      disk for instructions on installing 2.0 so that you can easily
+      boot into your choice of 1.3 or 2.0 from your harddisk.
+---------------------------------------------------------------------------
+
+You don't need an MMU, or coprocessor, or new ROMs, or ECS.
+
+You just need a first configured autoconfig RAM device 1 meg or larger.
+(might work with a 1/2 meg autoconfig card - not tested).
+
+In addition to "plain" RAM expansions, the A2620 and A2630 coprocessor
+carsd may be used because they contain RAM which is configured first.
+Third party coprocessor+RAM cards should also work.
+Some harddisk+RAM or coprocessor+harddisk+RAM cards may work, but
+only if they configure their RAM first (the A590 and A2091 do not, but
+you could use a 2091 if you have a separate RAM card in the right slot).
+GVP owners should see the earlier notes about GVP.
+
+***** The following items are all OPTIONAL when using 2.0:
+
+68020, 68030, MMU, Enhanced Chip Set, multisync monitor, additional hardware
+
+If you have a 2620 or 2630, the soft-kicked 2.0 will be in 32-bit RAM (fast!).
+If you have a harddrive, you can set your system up so that you can boot
+boot into 1.3 OR 2.0 off your harddrive (see SampleStartup on Kickfile disk).
+If you have the Enhanced Chip Set you will be able to try the new video
+modes (most require a multisync monitor).
+
+
+
+
+
+***** Special instructions for PAL machines and Multisync monitors
+
+    Addmonitor can be used in your startup-sequence to add the PAL
+    A2024, and multisync monitors.  Or you can drag the monitor icons
+    into the Workbench startup drawer.  (However, you may not be able
+    to boot in the proper mode in that case.)
+
+    addmonitor NUM=2 NAME=pal.monitor
+    addmonitor NUM=3 NAME=multisync.monitor
+    addmonitor NUM=4 NAME=A2024.monitor
+
+    The initial setting is for a 640x200 NTSC screen.  To try another
+    size, use the WBSCREEN preferences editor (after either adding
+    the ADDMONITOR calls to the Startup-Sequence or by dragging the icons
+    to the WBStartup drawer)
+

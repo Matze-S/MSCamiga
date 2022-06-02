@@ -1,0 +1,575 @@
+
+#include <exec/types.h>
+#include <clib/dos_protos.h>
+#include <clib/exec_protos.h>
+#include <devices/scsidisk.h>
+#include <dos/dos.h>
+#include <dos/dosextens.h>
+#include <dos/filehandler.h>
+#include <exec/io.h>
+#include <exec/memory.h>
+#include <stdio.h>
+
+extern short lowcyl, highcyl, surfaces, blkspertrk;
+extern long unit, flags, startoffset, endoffset;
+extern char devname[];
+extern void install_funcs(void);
+
+void main(int argc, char **argv)
+{
+   struct DosEnvec *dep;
+   struct FileSysStartupMsg *fssmp;
+   struct DosList *dolp;
+
+   printf("PCHD:-Handler v1.0 -- Copyright (C) 1991 by Matthias Schmidt\n");
+
+   if (dolp = LockDosList(LDF_DEVICES | LDF_READ)) {
+      if (dolp = FindDosEntry(dolp, (UBYTE *)"PCHD", LDF_DEVICES)) {
+         printf("dolp := 0x%08lx\n", (long)dolp);
+         printf("type := %ld\n", dolp->dol_Type);
+         printf("fssmp := 0x%08lx\n",
+               (long)(fssmp = (struct FileSysStartupMsg *)
+               BADDR(dolp->dol_misc.dol_handler. dol_Startup)));
+         printf("gv := %ld\n", (long)dolp->dol_misc.dol_handler.
+               dol_GlobVec);
+         printf("Unit := %lu\n", fssmp->fssm_Unit);
+         printf("Device := %s\n", &((char *)BADDR(fssmp->fssm_Device))[1]);
+         printf("Environ := 0x%08lx\n", (long)(dep = (struct DosEnvec *)
+               BADDR(fssmp->fssm_Environ)));
+         printf("Flags := %lu\n", fssmp->fssm_Flags);
+         printf("LowCyl := %lu\n", dep->de_LowCyl);
+         printf("HighCyl := %lu\n", dep->de_HighCyl);
+         printf("Surfaces := %lu\n", dep->de_Surfaces);
+         printf("BlocksPerTrack := %lu\n", dep->de_BlocksPerTrack);
+
+         unit = fssmp->fssm_Unit;
+         flags = fssmp->fssm_Flags;
+
+         lowcyl = dep->de_LowCyl;
+         highcyl = dep->de_HighCyl;
+         surfaces = dep->de_Surfaces;
+         blkspertrk = dep->de_BlocksPerTrack;
+
+         strcpy(devname, ((char *)BADDR(fssmp->fssm_Device)) + 1);
+
+         startoffset = ((ULONG)lowcyl) * ((ULONG)surfaces) *
+               ((ULONG)blkspertrk) << 9;
+         endoffset = (((ULONG)highcyl) + 1L) * ((ULONG)surfaces) *
+               ((ULONG)blkspertrk) << 9;
+
+/*
+   {
+      long blk[128], l1, l2;
+      int i;
+
+      for (l1 = 0, l2 = startoffset; l2 < endoffset; l1 += 512, l2 += 512) {
+         for (i = 0; i < 128; ++i) {
+            blk[i] = l1 + i * 4;
+         }
+         iob->io_Offset = l2;
+         iob->io_Data = (APTR)blk;
+         iob->io_Length = 512L;
+         iob->io_Command = CMD_WRITE;
+         DoIO((struct IORequest *)iob);
+      }
+   }
+*/
+
+                  install_funcs();
+                  printf("PCHD:-Handler dos functions installed "
+                        "succesfully.\n");
+         FreeDosEntry(dolp);
+      } else {
+         fprintf(stderr, "Can't find the PCHD:-Device!\n");
+         exit(10);
+      }
+      UnLockDosList(LDF_DEVICES);
+      printf("Unlocked...\n");
+   } else {
+      fprintf(stderr, "Can't lock the device list!\n");
+      exit(20);
+   }
+   exit(0);
+}
+
+#asm
+
+   include  "exec/types.i"
+   include  "devices/scsidisk.i"
+   include  "dos/dos.i"
+   include  "exec/io.i"
+   include  "exec/lists.i"
+   include  "exec/memory.i"
+   include  "exec/nodes.i"
+   include  "exec/ports.i"
+
+   far code
+   far data
+   cseg
+
+_AbsExecBase equ 4
+
+_install_funcs:
+   movem.l  d2-d3/a2-a3,-(sp)
+   move.l   #codeSize,d0
+   moveq.l  #MEMF_PUBLIC,d1
+   move.l   _SysBase#,a6
+   jsr      _LVOAllocMem(a6)
+   tst.l    d0
+   beq      _install_error
+   move.l   d0,a2                   ; a2 := code
+   move.l   d0,a1
+   lea.l    code(pc),a0
+   move.l   #((codeSize/2)-1),d1
+_copy_loop:
+   move.w   (a0)+,(a1)+
+   dbf      d1,_copy_loop
+   moveq.l  #4,d2
+   lea.l    _set_table(pc),a3
+   move.l   a2,d3
+_set_loop:
+   moveq.l  #0,d0
+   move.w   (a3)+,d0
+   move.w   (a3)+,a0
+   add.l    d3,d0
+   move.l   _DOSBase#,a1
+   jsr      _LVOSetFunction#(a6)
+   move.l   d0,(a2)+
+   dbf      d2,_set_loop
+_install_error:
+   movem.l  (sp)+,d2-d3/a2-a3
+   rts
+
+_set_table:
+   dc.w  (open-code),-_LVOOpen#
+   dc.w  (close-code),-_LVOClose#
+   dc.w  (read-code),-_LVORead#
+   dc.w  (write-code),-_LVOWrite#
+   dc.w  (seek-code),-_LVOSeek#
+
+code:
+   ds.l  5
+
+block:
+   ds.b  512
+
+_lowcyl:
+   dc.w  0
+_highcyl:
+   dc.w  0
+_surfaces:
+   dc.w  0
+_blkspertrk:
+   dc.w  0
+_startoffset:
+   dc.l  0
+_endoffset:
+   dc.l  0
+_unit:
+   dc.l  0
+_flags:
+   dc.l  0
+_mp:
+   dc.l  0,0
+   dc.b  NT_MSGPORT,0
+   dc.l  0
+   dc.b  PA_SIGNAL,0
+   dc.l  0
+   dc.l  0,0,0
+_iob:
+   dc.l  0,0
+   dc.b  NT_MESSAGE,0
+   dc.l  0,0
+   dc.w  IOSTD_SIZE
+   dc.l  0,0
+   dc.w  0
+   dc.b  0,0
+   dc.l  0,0,0,0
+_devname:
+   ds.b  16
+
+open:
+   move.l   d1,a0
+   cmp.l    #'PCHD',(a0)
+   bne      old_open
+   cmp.w    #(':'<<8),4(a0)
+   beq      new_open
+old_open:
+   move.l   code(pc),a0
+   jmp      (a0)
+new_open:
+   cmp.l    #MODE_OLDFILE,d2
+   beq      1$
+   cmp.l    #MODE_READWRITE,d2
+   bne      old_open
+1$ movem.l  d1/a6,-(sp)
+   moveq.l  #8,d0
+   moveq.l  #MEMF_PUBLIC,d1
+   move.l   (_AbsExecBase#).w,a6
+   jsr      _LVOAllocMem#(a6)
+   tst.l    d0
+   beq      end_open
+   move.l   d0,a0
+   move.l   #'PCHD',(a0)
+   clr.l    4(a0)
+   lsr.l    #2,d0
+end_open:
+   movem.l  (sp)+,d1/a6
+   rts
+
+close:
+   move.l   d1,a1
+   add.l    a1,a1
+   add.l    a1,a1
+   cmp.l    #'PCHD',(a1)
+   beq      new_close
+   move.l   (code+4)(pc),a0
+   jmp      (a0)
+new_close:
+   movem.l  d1/a6,-(sp)
+   moveq.l  #8,d0
+   move.l   (_AbsExecBase#).w,a6
+   jsr      _LVOFreeMem#(a6)
+   movem.l  (sp)+,d1/a6
+   rts
+
+read:
+   move.w   #CMD_READ,d0
+   move.l   (code+8)(pc),a0
+   bra      rdwr
+
+write:
+   move.w   #CMD_WRITE,d0
+   move.l   (code+12)(pc),a0
+
+rdwr:
+   move.l   d1,a1
+   add.l    a1,a1
+   add.l    a1,a1
+   cmp.l    #'PCHD',(a1)
+   beq      new_rdwr
+   jmp      (a0)
+new_rdwr:
+   movem.l  d1-d5/a1-a3/a6,-(sp)    ; d2 := data, d3 := length, d5 := actual
+   move.l   4(a1),d4                ; d4 := offset, a2 := sector-size, a3 := cmd
+   move.w   d0,a3
+   move.w   #512,a2
+   moveq.l  #0,d5
+   cmp.l    a2,d4
+   bcc      hd_rdwr
+
+; block 0 ...
+   cmp.w    #CMD_READ,a3            ; can't write to block 0 ...
+   bne      new_rdwr_end
+blk0_read:
+   lea.l    block(pc),a0
+   move.l   a0,a1
+   moveq.l  #127,d0
+   move.l   #$f6f6f6f6,d1
+del_blk0_loop:
+   move.l   d1,(a1)+
+   dbf      d0,del_blk0_loop
+   move.l   #'ABOO',(a0)+
+   move.l   #('T'<<24),(a0)+
+   move.w   _surfaces(pc),(a0)+
+   move.w   _blkspertrk(pc),(a0)+
+   move.w   _highcyl(pc),d0
+   sub.w    _lowcyl(pc),d0
+   move.w   d0,(a0)+
+   move.l   a2,d0
+   sub.w    d4,d0                   ; count := d0 := rest of block
+   cmp.l    d0,d3
+   bcc      1$                      ; ... length (d3) >= rest of block
+   move.w   d3,d0                   ; length < rest of block --> count := length
+1$ lea.l    block(pc),a0
+   add.l    d4,a0                   ; source += count
+   move.l   d2,a1
+   sub.l    d0,d3                   ; length -= count
+   add.l    d0,d5                   ; actual += count
+   add.l    d0,d4                   ; offset += count
+   bra      3$
+2$ move.b   (a0)+,(a1)+
+3$ dbf      d0,2$
+   move.l   a1,d2                   ; d2 := data
+
+; other blocks
+hd_rdwr:
+   tst.l    d3
+   beq      new_rdwr_end
+   bmi      new_rdwr_end
+   move.l   d4,d0
+   sub.l    a2,d0
+   add.l    _startoffset(pc),d0
+   move.l   d3,d1
+   add.l    d0,d3
+   cmp.l    _endoffset(pc),d3
+   bcs      1$
+   beq      1$
+   move.l   _endoffset(pc),d1
+   sub.l    d0,d1
+   bpl.s    1$
+   moveq.l  #0,d1
+1$ move.l   d2,a0
+   cmp.w    #CMD_READ,a3
+   bne      hd_wr
+hd_rd:
+   bsr      rd
+   bra      hd_cont
+hd_wr:
+   bsr      wr
+hd_cont:
+   add.l    d0,d5
+new_rdwr_end:
+   move.l   d5,d0
+   movem.l  (sp)+,d1-d5/a1-a3/a6
+   add.l    d0,4(a1)
+   rts
+
+rd:                        ; (d0 := offset, d1 := length, a0 := data)
+   movem.l  d2-d4/a2-a4,-(sp)
+   bsr      _initio
+   move.l   d0,d2          ; d2 := offset
+   move.l   d1,d3          ; d3 := length
+   move.l   a0,a2          ; a2 := data
+   moveq.l  #0,d4          ; d4 := actual
+   move.w   #512,a3        ; a3 := sector size - constant 512
+   tst.l    d3
+   beq      rd_end
+   and.w    #511,d0
+   beq      rd_2
+rd_1:
+   move.w   d2,d0
+   and.w    #-512,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _readsecs
+   cmp.l    a3,d0
+   bne      rd_error
+   move.w   d2,d0
+   and.w    #511,d0        ; d0 := offset in sector (0-511)
+   move.l   a3,d1
+   sub.w    d0,d1          ; d1 := # of rest bytes in sector (1-512)
+   cmp.l    d1,d3
+   bcc      1$             ; ... length (d3) is >= rest of bytes
+   move.w   d3,d1
+1$ sub.l    d1,d3          ; length -= count
+   move.w   d1,d4          ; actual := count
+   lea.l    block(pc),a0
+   add.w    d0,a0
+   bra      3$
+2$ move.b   (a0)+,(a2)+
+3$ dbf      d1,2$
+   tst.l    d3
+   beq      rd_end
+   and.w    #-512,d2       ; offset = (offset + 511) & ~511
+   add.l    a3,d2
+rd_2:
+   cmp.l    a3,d3
+   bcs      rd_3           ; ... length < size of sector (512)
+   move.l   d2,d0
+   move.l   d3,d1
+   and.w    #-512,d1       ; d1 := length & ~511
+   move.l   d1,a4          ; a4 := d1
+   move.l   a2,a0
+   bsr      _readsecs
+   add.l    d0,d4          ; actual(file) += actual(iob)
+   cmp.l    a4,d0
+   bne      rd_error       ; actual <> length & ~511
+   sub.l    a4,d3
+   beq      rd_end         ; ... length = 0
+   add.l    a4,d2          ; offset += length & ~511
+   add.l    a4,a2          ; data += length & ~511
+rd_3:
+   move.l   d2,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _readsecs
+   cmp.l    a3,d0
+   bne      rd_error
+   add.l    d3,d4          ; actual += length
+   lea.l    block(pc),a0
+   bra      5$
+4$ move.b   (a0)+,(a2)+
+5$ dbf      d3,4$
+rd_error:
+rd_end:
+   move.l   d4,d0
+   movem.l  (sp)+,d2-d4/a2-a4
+   bra      _endio
+
+wr:                        ; (d0 := offset, d1 := length, a0 := data)
+   movem.l  d2-d4/a2-a4,-(sp)
+   bsr      _initio
+   move.l   d0,d2          ; d2 := offset
+   move.l   d1,d3          ; d3 := length
+   move.l   a0,a2          ; a2 := data
+   moveq.l  #0,d4          ; d4 := actual
+   move.w   #512,a3        ; a3 := sector size - constant 512
+   tst.l    d3
+   beq      wr_end
+   and.w    #511,d0
+   beq      wr_2
+wr_1:
+   move.w   d2,d0
+   and.w    #-512,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _readsecs
+   cmp.l    a3,d0
+   bne      wr_error
+   move.w   d2,d0
+   and.w    #511,d0        ; d0 := offset in sector (0-511)
+   move.l   a3,d1
+   sub.w    d0,d1          ; d1 := # of rest bytes in sector (1-512)
+   cmp.l    d1,d3
+   bcc      1$             ; ... length (d3) is >= rest of bytes
+   move.w   d3,d1
+1$ sub.l    d1,d3          ; length -= count
+   move.w   d1,d4          ; actual := count
+   lea.l    block(pc),a0
+   add.w    d0,a0
+   bra      3$
+2$ move.b   (a2)+,(a0)+
+3$ dbf      d1,2$
+   tst.l    d3
+   beq      wr_end
+   and.w    #-512,d2       ; offset = (offset + 511) & ~511
+   move.l   d2,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _writesecs
+   cmp.l    a3,d0
+   bne      wr_error
+   add.l    a3,d2
+wr_2:
+   cmp.l    a3,d3
+   bcs      wr_3           ; ... length < size of sector (512)
+   move.l   d2,d0
+   move.l   d3,d1
+   and.w    #-512,d1       ; d1 := length & ~511
+   move.l   d1,a4          ; a4 := d1
+   move.l   a2,a0
+   bsr      _writesecs
+   add.l    d0,d4          ; actual(file) += actual(iob)
+   cmp.l    a4,d0
+   bne      wr_error       ; actual <> length & ~511
+   sub.l    a4,d3
+   beq      wr_end         ; ... length = 0
+   add.l    a4,d2          ; offset += length & ~511
+   add.l    a4,a2          ; data += length & ~511
+wr_3:
+   move.l   d2,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _readsecs
+   cmp.l    a3,d0
+   bne      wr_error
+   add.l    d3,d4          ; actual += length
+   lea.l    block(pc),a0
+   bra      5$
+4$ move.b   (a2)+,(a0)+
+5$ dbf      d3,4$
+   move.l   d2,d0
+   move.l   a3,d1
+   lea.l    block(pc),a0
+   bsr      _writesecs
+wr_error:
+wr_end:
+   move.l   d4,d0
+   movem.l  (sp)+,d2-d4/a2-a4
+   bra      _endio
+
+_writesecs:
+   move.w   #CMD_WRITE,-(sp)
+   bra.s    _rdwrsecs
+
+_readsecs:
+   move.w   #CMD_READ,-(sp)
+
+_rdwrsecs:
+   lea.l    _iob(pc),a1
+   move.l   d0,IO_OFFSET(a1)
+   move.l   d1,IO_LENGTH(a1)
+   move.l   a0,IO_DATA(a1)
+   move.w   (sp)+,IO_COMMAND(a1)
+   move.l   (_AbsExecBase#).w,a6
+   jsr      _LVODoIO#(a6)
+   lea.l    _iob(pc),a1
+   move.l   IO_ACTUAL(a1),d0
+   rts
+
+seek:
+   move.l   d1,a1
+   add.l    a1,a1
+   add.l    a1,a1
+   cmp.l    #'PCHD',(a1)
+   beq      new_seek
+   move.l   (code+16)(pc),a0
+   jmp      (a0)
+new_seek:
+   cmp.l    #OFFSET_END,d3
+   bne.s    1$
+   move.l   _endoffset(pc),d0
+   sub.l    _startoffset(pc),d0
+   add.l    #512,d0
+   bra.s    2$
+1$ move.l   d2,d0
+   cmp.l    #OFFSET_BEGINNING,d3
+   beq.s    3$
+   move.l   4(a1),d0
+   cmp.l    #OFFSET_CURRENT,d3
+   bne.s    3$
+2$ add.l    d2,d0
+3$ move.l   d0,4(a1)
+   rts
+
+_initio:
+   movem.l  d0-d1/a0-a2/a6,-(sp)
+   lea.l    _mp(pc),a2
+   sub.l    a1,a1
+   move.l   (_AbsExecBase#).w,a6
+   jsr      _LVOFindTask#(a6)
+   move.l   d0,MP_SIGTASK(a2)
+   moveq.l  #-1,d0
+   jsr      _LVOAllocSignal#(a6)
+   tst.l    d0
+   bpl.s    1$
+   moveq.l  #0,d0
+   bra.s    _initio_end
+1$ move.b   d0,MP_SIGBIT(a2)
+   lea.l    (MP_MSGLIST+4)(a2),a0
+   move.l   a0,-(a0)
+   move.l   a0,8(a0)
+   lea.l    _iob(pc),a1
+   move.l   a2,MN_REPLYPORT(a1)
+   lea.l    _devname(pc),a0
+   move.l   _unit(pc),d0
+   move.l   _flags(pc),d1
+   jsr      _LVOOpenDevice#(a6)
+   not.l    d0
+   tst.l    d0
+   bne.s    _initio_end
+   moveq.l  #0,d0
+   move.b   MP_SIGBIT(a2),d0
+;   jsr      _LVOFreeSignal#(a6)
+   moveq.l  #0,d0
+_initio_end:
+   movem.l  (sp)+,d0-d1/a0-a2/a6
+   rts
+
+_endio:
+   movem.l  d0-d1/a0-a1/a6,-(sp)
+   lea.l    _iob(pc),a1
+   move.l   (_AbsExecBase#).w,a6
+   jsr      _LVOCloseDevice#(a6)
+   moveq.l  #0,d0
+   lea.l    _mp(pc),a0
+   move.b   MP_SIGBIT(a0),d0
+   jsr      _LVOFreeSignal#(a6)
+   movem.l  (sp)+,d0-d1/a0-a1/a6
+   rts
+
+codeSize equ (*-code)
+
+#endasm
+

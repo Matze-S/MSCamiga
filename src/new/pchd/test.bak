@@ -1,0 +1,42 @@
+
+#include <exec/types.h>
+#include <clib/dos_protos.h>
+#include <dos/dos.h>
+#include <stdio.h>
+
+static unsigned char buf[4][512];
+
+void fill(void)
+{
+   int i, j;
+
+   for (i = 0; i < 4; ++i)
+      for (j = 0; j < 512; ++j)
+         buf[i][j] = 0x44;
+}
+
+void print(void)
+{
+   int i, j, k;
+
+   for (i = 0; i < 4; ++i)
+      for (j = 0; j < 512; j += 16) {
+         printf("%d%03x:", i, j);
+         for (k = 0; k < 16; ++k)
+            printf(" %02x", (unsigned)buf[i][j + k]);
+         printf("\n");
+      }
+}
+
+void main(int argc, char **argv)
+{
+   BPTR fh;
+
+   if (fh = Open((UBYTE *)"PCHD:", MODE_OLDFILE)) {
+      fill();
+      print();
+      Close(fh);
+   }
+   exit(0);
+}
+

@@ -1,0 +1,10 @@
+Aztec 68000 Assembler Version 5.0a  Jan  9 1990  8:04:37
+     1 0000:                    
+     2 0000:                       far code
+     3 0000:                       far data
+     4 0000:                    
+     5 0000:  2200                 move.l   d0,d1
+     6 0002:  40c0                 move.w   sr,d0
+     7 0004:  2200                 move.l   d0,d1
+     8 0006:  4e75                 rts
+     9 0008:                    

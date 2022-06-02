@@ -1,0 +1,118 @@
+                      SOME GENERAL COMPATIBILITY PROBLEM AREAS
+
+            Generally fatal with any new OS:
+              - Calling ROM code directly
+              - Requiring all free RAM
+              - Shaving stack size too close
+
+            Often disastrous with new OS or hardware:
+              - Depending on unsupported side effects
+              - Bad flags/registers/condition code handling
+              - Poking / peeking private system structures
+              - Assuming current choices or configurations
+              - Processor speed/instruction dependencies
+
+            Strap:
+              - romboot.library is gone
+              - boot from other floppies (+5,-10,-20,-30)
+
+            Exec:
+              - Everything has moved, of course
+              - Exec handles early expansion
+              - Cold Capture done later
+              - Exception/Interrupt vectors may move (VBR)
+              - Size and types of MemHeaders may change
+              - Survive reboot may break - new provided
+
+            Expansion:
+              - Two pass config, address slot reordering
+              - ExpansionBase private - Use FindConfigDev()
+
+            DOS:
+              - Real library base with regular LVO vectors
+              - Stack use all changed (variables, direction)
+              - New packet and lock types
+              - Process struct bigger, roll-your-own fails
+
+            Workbench:
+              - New sizes, depths, modes, fonts
+              - Default Tool searches paths
+              - New Look icons ( boxed )
+
+            Intuition:
+              - Private IBase variables moved/changed
+              - Poking IBase Max Mouse variables now a no-op
+              - Poking other private variables may be fatal
+              - Larger screens, new modes, overscan support
+              - GetScreenData() not enough to clone a screen
+              - Scrollable screens (Left-Amiga/select stolen)
+              - Rawkey|Vanillakey gives raw fkeys, help, etc.
+              - Move SimpleRefresh win may not send refresh
+
+            Layers:
+              - Use NewLayerInfo() to create
+                not FattenLayerInfo,ThinLayerInfo,InitLayers
+              - Simple-refresh preserves all pixels it can
+
+            Graphics:
+              - Copper lists changed, illegal poking breaks
+              - ColorMap bigger, must GetColorMap() to create
+              - Blitter rtns decide ascend/descend on 1st plane
+              - Some flying mode changes may break
+              - GfxBase DisplayFlags and row/cols may != WB
+
+            Fonts:
+              - Some format changes (old format supported)
+              - Private format of .font files has changed
+              - Default font may be larger, proportional
+              - Topaz is now sans-serif
+              - Size created via bitmap scale if requested
+
+            CLI / Shell:
+              - Many more commands built-in (no longer in C:)
+              - Limit of 20 gone, DOSBase CLI table changed
+              - EOF char passed for Close Gadget in CLI
+		This is -1L from CON: getchar, close gad esc seq from raw 
+              - Uses simple-refresh character-mapped console
+
+            Console:
+              - CON: default is character-mapped console
+              - Superbitmap console now has cursor (bug fixed)
+
+            Audio.device:
+              - Not initialized until used
+              - This means lo-mem open failure possible
+
+            Gameport.device:
+              - Currently exclusive access
+
+            Serial.device:
+              - Clears io_Device on CloseDevice()
+
+            Multi-Serial Boards:
+              - May not support all params
+              - So serial SetParams command may fail
+
+            Timer.device:
+              - Timer.device now trashes request as doc'd
+              - IO_QUICK may defer and reply as doc'd
+
+            Trackdisk:
+              - Private trackdisk structures changed
+              - Buffer freeable, lo-mem open fail possible
+
+            CIA Timers:
+              - CIAA Timer A is used by the system
+              - CIAB Timer A and B currently available
+
+            Hardware:
+              - New RAM amounts and addresses
+              - 32-bit addrs (trashed hi byte now matters)
+              - New registers and bits
+              - Battery-backed clock different
+
+            New Look:
+              - New default colors, new gadget images
+              - Inner border line render
+              - Window borders filled on active AND inactive
+

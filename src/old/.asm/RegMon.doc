@@ -1,0 +1,35 @@
+
+Günter Auwärter
+Poststr. 59
+7332 Eislingen/Files
+Tel: 07161/812321
+
+
+Rubrik: Programmieren
+
+
+                                  RegMon
+                                 --------
+
+      Falls Sie ein Assembler-Programmierer sind und ein Programm suchen,
+      das Ihnen bei der der Fehleranalyse sicher behilflich sein wird,
+      dann ist unser Register-Monitor, RegMon, vielleicht das Richtige für
+      Sie. RegMon ist eine kleine Assembler-Unterroutine, welche Ihnen die
+      wichtigsten Prozessor-Register und -Flags im aktuellen CLI-Window
+      ausgibt. RegMon können Sie an beliebigen Stellen Ihres Programmes
+      aufrufen, sei es nur darum, einem Fehler auf die Schliche zu kommen
+      oder einfach nur Befehlsauswirkungen zu analysieren. Nach Ende von
+      RegMon befinden sich in den Prozessor-Registern die alten Werte,
+      und die Flags sind im gleichen Zustand wie vor Aufruf der Routine.
+      Die Unter Routine stört also keinesfalls ihren Programmablauf - es
+      könnte höchstens eine evtl. im CLI vorhandene Ausgabe(-Maske) Ihres
+      Programms durch die Registerausgabe zerstört werden. Achtung: Sollte
+      RegMon nicht mit BSR oder JSR aufgerufen werden - also keine Rücksprung-
+      adresse vor dem Aufruf auf dem Stack gerettet werden - ist es programm-
+      technisch unmöglich den Programm-Counter (PC) korrekt zu ermitteln,
+      d.h. es wird bei Nichtbeachtung eine falsche Adresse ausgegeben !
+      RegMon wurde mit dem Public-Domain-Assembler A68k (zu finden auf
+      Fish-Disk 103) geschrieben. Es dürfte aber keine Probleme bereiten,
+      das Listing auf andere Assembler anzupassen.
+
+                                                  G.Auwärter & M.Schmidt

@@ -1,0 +1,2 @@
+cc -mc -md -bs -hi aztec:includes.pre vbr.c
+ln vbr.o -gwlcl

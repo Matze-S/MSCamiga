@@ -1,0 +1,21 @@
+Aztec 68000 Assembler Version 5.0a  Jan  9 1990  8:04:37
+     1 0000:                    
+     2 0000:                             far code
+     3 0000:                             far data
+     4 0000:                             machine mc68020
+     5 0000:                             mc68881
+     6 0000:                             mc68851
+     7 0000:                             cseg
+     8 0000:                    
+     9 0000:  2c78 0004                  move.l   ($4).w,a6
+    10 0004:  4bfa 0008                  lea.l    do_mmu,a5
+    11 0008:  4eae ffe2                  jsr      -$1e(a6)
+    12 000c:  4e75                       rts
+    13 000e:                    
+    14 000e:                    do_mmu:
+    15 000e:  594f                       subq.w   #4,sp
+    16 0010:  f017 4200                  pmove.l  tc,(sp)
+    17 0014:  201f                       move.l   (sp)+,d0
+    18 0016:  4e73                       rte
+    19 0018:                    
+    20 0018:                             end
